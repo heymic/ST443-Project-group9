@@ -1,0 +1,13 @@
+---
+title: "Machine Learning group project"
+author: "Michal Heydel"
+date: "27 November 2017"
+output: pdf_document
+---
+
+
+
+```{r}
+setwd("C:/Users/Michal/Documents/01- Master Degree/GitHub/ST443-Project-group9")
+```
+
