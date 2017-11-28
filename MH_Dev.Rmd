@@ -30,6 +30,10 @@ df[df== -8 ]<-NA
 
 ```
 
+```{r}
+is.na(df) <- df==''
+```
+
 ```{r, eval= FALSE}
 # df[df== ""] <-NA # DOESNT WORK
 ```
@@ -46,6 +50,7 @@ df1 = df1[-which(is.na(df1$grearn)), ]
 
 ```{r}
 df1 = df1[, -which(colMeans(is.na(df1)) > 0.3)]
+
 ```
 
 ```{r, eval= FALSE}
@@ -62,11 +67,11 @@ df2 <- read.table(file= "data_reduced_416.csv", na.strings=c("", "NA"), sep=",",
 ```
 
 ```{r}
-df2 = df2[, -which(colMeans(is.na(df2)) > 0.3)]
+df2 = df2[, -which(colMeans(is.na(df2)) > 0.001)]
 ```
 
 ```{r, eval= FALSE}
-write.table(df2, file = "data_reduced_411.csv", col.names = TRUE, na = "NA", sep = "," , row.names = FALSE)
+write.table(df2, file = "data_reduced_393.csv", col.names = TRUE, na = "NA", sep = "," , row.names = FALSE)
 ```
 
 ```{r, eval=FALSE}
@@ -75,5 +80,36 @@ head(df2)
 
 ```{r}
 dim(df2)
+```
+```{r}
+library(glmnet)
+df_na_omit <-na.omit(df2)
+
+## glmnet does not use formula language
+x <-model.matrix(grearn~.-1, data=df_na_omit)
+y <-df_na_omit$grearn
+```
+
+```{r}
+fit.lasso <- glmnet(x,y)
+plot(fit.lasso, xvar="lambda", label= TRUE)
+```
+```{r}
+plot(fit.lasso, xvar="dev", label= TRUE)
+```
+```{r}
+cv.lasso <-cv.glmnet(x, y)
+plot(cv.lasso)
+```
+```{r}
+## coefficent vector corresponding to the mse which is within one standard error of the lowest mse using the best lambda.
+coef(cv.lasso)
+```
+```{r}
+## coefficient vector corresponding to the lowest mse using the best lambda
+coef(glmnet(x,y, lambda=cv.lasso$lambda.min))
+```
+```{r}
+
 ```
 
