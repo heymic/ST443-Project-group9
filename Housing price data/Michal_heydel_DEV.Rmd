@@ -74,6 +74,7 @@ for(i in colnames(df[,sapply(df, is.character)])){
 
 ```{r}
 # These are also categorical Variables
+df$MSSubClass <- as.factor(df$MSSubClass)
 df$OverallCond <- as.factor(df$OverallCond)
 df$OverallQual <- as.factor(df$OverallQual)
 ```
