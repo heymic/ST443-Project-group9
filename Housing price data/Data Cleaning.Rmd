@@ -2,12 +2,15 @@
 title: "Data Cleaning"
 output: html_document
 ---
+```{r}
+train = read.csv("C:/Users/kevin/Downloads/train.csv", row.names = "Id", stringsAsFactors=FALSE)
+```
 
 MSzoning Clustering
 
 ```{r}
-price <- summarize(group_by(train, MSZoning),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, MSZoning),
+#          mean(SalePrice, na.rm=T))
 
 # price[order(price$`mean(SalePrice, na.rm = T)`),]
 
@@ -27,8 +30,8 @@ train$paved[train$Street != "Pave"] <- 0
 Alley: Binary
 
 ```{r}
-price <- summarize(group_by(train, Alley),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, Alley),
+ #         mean(SalePrice, na.rm=T))
 
 # price[order(price$`mean(SalePrice, na.rm = T)`),]
 
@@ -77,8 +80,8 @@ train$culdesac_fr3[!train$LandSlope %in% c("CulDSac", "FR3")] <- 0
 No idea what he did here either.
 
 ```{r groupmeans_nbhd, echo=FALSE}
-nbhdprice <- summarize(group_by(train, Neighborhood),
-          mean(SalePrice, na.rm=T))
+#nbhdprice <- summarize(group_by(train, Neighborhood),
+ #         mean(SalePrice, na.rm=T))
 
 #nbhdprice[order(nbhdprice$`mean(SalePrice, na.rm = T)`),]
 
@@ -115,11 +118,11 @@ train$twnhs_end_or_1fam[train$BldgType %in% c("1Fam", "TwnhsE")] <- 1
 train$twnhs_end_or_1fam[!train$BldgType %in% c("1Fam", "TwnhsE")] <- 0
 ```
 
-Divide housestyle into 3 bands from its continuous value
+Divide housestyle into 3 bands from its continuous value: Dont understand his syntax
 
 ```{r}
-housestyle_price <- summarize(group_by(train, HouseStyle),
-          mean(SalePrice, na.rm=T))
+#housestyle_price <- summarize(group_by(train, HouseStyle),
+ #         mean(SalePrice, na.rm=T))
 
 housestyle_lo <- filter(housestyle_price, housestyle_price$`mean(SalePrice, na.rm = T)` < 140000)
 housestyle_med <- filter(housestyle_price, housestyle_price$`mean(SalePrice, na.rm = T)` < 200000 &
@@ -135,8 +138,8 @@ Change roofstyle into a binary variable based off the mean price.
 Hip and shed 1, else 0
 
 ```{r}
-roofstyle_price <- summarize(group_by(train, RoofStyle),
-          mean(SalePrice, na.rm=T))
+#roofstyle_price <- summarize(group_by(train, RoofStyle),
+ #         mean(SalePrice, na.rm=T))
 
 train$roof_hip_shed[train$RoofStyle %in% c("Hip", "Shed")] <- 1
 train$roof_hip_shed[!train$RoofStyle %in% c("Hip", "Shed")] <- 0
@@ -147,18 +150,18 @@ Membrane, Wood Shakes Wood Shingles 1
 Else 0
 
 ```{r}
-roofmatl_price <- summarize(group_by(train, RoofMatl),
-          mean(SalePrice, na.rm=T))
+#roofmatl_price <- summarize(group_by(train, RoofMatl),
+ #         mean(SalePrice, na.rm=T))
 
 train$roof_matl_hi[train$RoofMatl %in% c("Membran", "WdShake", "WdShngl")] <- 1
 train$roof_matl_hi[!train$RoofMatl %in% c("Membran", "WdShake", "WdShngl")] <- 0
 ```
 
-Regrouped the different categories of exterior covering into 3 bands
+Regrouped the different categories of exterior covering into 3 bands: Dont understand his syntax
 
 ```{r}
-price <- summarize(group_by(train, Exterior1st),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, Exterior1st),
+ #         mean(SalePrice, na.rm=T))
 
 matl_lo_1 <- filter(price, price$`mean(SalePrice, na.rm = T)` < 140000)
 matl_med_1<- filter(price, price$`mean(SalePrice, na.rm = T)` < 200000 &
@@ -170,11 +173,11 @@ train$exterior_1[train$Exterior1st %in% matl_med_1$Exterior1st] <- 2
 train$exterior_1[train$Exterior1st %in% matl_hi_1$Exterior1st] <- 3
 ```
 
-Regrouped the different categories of exterior if more than one material into 3 bands
+Regrouped the different categories of exterior if more than one material into 3 bands: Syntax of the Summarize command
 
 ```{r}
-price <- summarize(group_by(train, Exterior2nd),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, Exterior2nd),
+ #         mean(SalePrice, na.rm=T))
 
 matl_lo <- filter(price, price$`mean(SalePrice, na.rm = T)` < 140000)
 matl_med <- filter(price, price$`mean(SalePrice, na.rm = T)` < 200000 &
@@ -191,8 +194,8 @@ Stone and Brick Face = 1
 Else = 0
 
 ```{r}
-price <- summarize(group_by(train, MasVnrType),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, MasVnrType),
+ #         mean(SalePrice, na.rm=T))
 
 train$exterior_mason_1[train$MasVnrType %in% c("Stone", "BrkFace") | is.na(train$MasVnrType)] <- 1
 train$exterior_mason_1[!train$MasVnrType %in% c("Stone", "BrkFace") & !is.na(train$MasVnrType)] <- 0
@@ -201,8 +204,8 @@ train$exterior_mason_1[!train$MasVnrType %in% c("Stone", "BrkFace") & !is.na(tra
 Renamed the external quality of the material categories into 5 numerical levels. NA=0, No Poor observations
 
 ```{r}
-price <- summarize(group_by(train, ExterQual),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, ExterQual),
+ #         mean(SalePrice, na.rm=T))
 
 train$exterior_cond[train$ExterQual == "Ex"] <- 4
 train$exterior_cond[train$ExterQual == "Gd"] <- 3
@@ -213,8 +216,8 @@ train$exterior_cond[train$ExterQual == "Fa"] <- 1
 Relabeled the external condition of the material categories into 5 numerical levels. NA=0
 
 ```{r}
-price <- summarize(group_by(train, ExterCond),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, ExterCond),
+ #         mean(SalePrice, na.rm=T))
 
 train$exterior_cond2[train$ExterCond == "Ex"] <- 5
 train$exterior_cond2[train$ExterCond == "Gd"] <- 4
@@ -228,8 +231,8 @@ Pconc = 1
 
 ```{r}
 
-price <- summarize(group_by(train, Foundation),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, Foundation),
+ #         mean(SalePrice, na.rm=T))
 
 train$found_concrete[train$Foundation == "PConc"] <- 1
 train$found_concrete[train$Foundation != "PConc"] <- 0
@@ -238,8 +241,8 @@ train$found_concrete[train$Foundation != "PConc"] <- 0
 Basement Height: Setting poor as default.
 
 ```{r}
-price <- summarize(group_by(train, BsmtQual),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, BsmtQual),
+ #         mean(SalePrice, na.rm=T))
 
 train$bsmt_cond1[train$BsmtQual == "Ex"] <- 5
 train$bsmt_cond1[train$BsmtQual == "Gd"] <- 4
@@ -251,8 +254,8 @@ train$bsmt_cond1[is.na(train$BsmtQual)] <- 1
 Basement Condition: Setting Excellent as default
 
 ```{r}
-price <- summarize(group_by(train, BsmtCond),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, BsmtCond),
+ #         mean(SalePrice, na.rm=T))
 
 train$bsmt_cond2[train$BsmtCond == "Gd"] <- 5
 train$bsmt_cond2[train$BsmtCond == "TA"] <- 4
@@ -264,8 +267,8 @@ train$bsmt_cond2[train$BsmtCond == "Po"] <- 1
 Basment Exposure: 
 
 ```{r}
-price <- summarize(group_by(train, BsmtExposure),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, BsmtExposure),
+ #         mean(SalePrice, na.rm=T))
 
 train$bsmt_exp[train$BsmtExposure == "Gd"] <- 5
 train$bsmt_exp[train$BsmtExposure == "Av"] <- 4
@@ -277,8 +280,8 @@ train$bsmt_exp[is.na(train$BsmtExposure)] <- 1
 Basement rating1:
 
 ```{r}
-price <- summarize(group_by(train, BsmtFinType1),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, BsmtFinType1),
+ #         mean(SalePrice, na.rm=T))
 
 train$bsmt_fin1[train$BsmtFinType1 == "GLQ"] <- 5
 train$bsmt_fin1[train$BsmtFinType1 == "Unf"] <- 4
@@ -290,8 +293,8 @@ train$bsmt_fin1[is.na(train$BsmtFinType1)] <- 1
 Basement rating2:
 
 ```{r}
-price <- summarize(group_by(train, BsmtFinType2),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, BsmtFinType2),
+ #         mean(SalePrice, na.rm=T))
 
 train$bsmt_fin2[train$BsmtFinType2 == "ALQ"] <- 6
 train$bsmt_fin2[train$BsmtFinType2 == "Unf"] <- 5
@@ -304,9 +307,9 @@ train$bsmt_fin2[is.na(train$BsmtFinType2)] <- 1
 Changed type of heating into a binary
 
 ```{r hvac, echo=FALSE}
-
-price <- summarize(group_by(train, Heating),
-          mean(SalePrice, na.rm=T))
+#
+#price <- summarize(group_by(train, Heating),
+ #         mean(SalePrice, na.rm=T))
 
 
 train$gasheat[train$Heating %in% c("GasA", "GasW")] <- 1
@@ -316,8 +319,8 @@ train$gasheat[!train$Heating %in% c("GasA", "GasW")] <- 0
 Heating Quality
 
 ```{r}
-price <- summarize(group_by(train, HeatingQC),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, HeatingQC),
+ #         mean(SalePrice, na.rm=T))
 
 train$heatqual[train$HeatingQC == "Ex"] <- 5
 train$heatqual[train$HeatingQC == "Gd"] <- 4
@@ -336,8 +339,8 @@ train$air[train$CentralAir == "N"] <- 0
 Electrical System
 
 ```{r}
-price <- summarize(group_by(train, Electrical),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, Electrical),
+ #         mean(SalePrice, na.rm=T))
 
 train$standard_electric[train$Electrical == "SBrkr" | is.na(train$Electrical)] <- 1
 train$standard_electric[!train$Electrical == "SBrkr" & !is.na(train$Electrical)] <- 0
@@ -346,8 +349,8 @@ train$standard_electric[!train$Electrical == "SBrkr" & !is.na(train$Electrical)]
 Kitchen Quality
 
 ```{r}
-price <- summarize(group_by(train, KitchenQual),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, KitchenQual),
+ #         mean(SalePrice, na.rm=T))
 
 train$kitchen[train$KitchenQual == "Ex"] <- 4
 train$kitchen[train$KitchenQual == "Gd"] <- 3
@@ -358,8 +361,8 @@ train$kitchen[train$KitchenQual == "Fa"] <- 1
 Fireplace quality
 
 ```{r}
-price <- summarize(group_by(train, FireplaceQu),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, FireplaceQu),
+ #         mean(SalePrice, na.rm=T))
 
 train$fire[train$FireplaceQu == "Ex"] <- 5
 train$fire[train$FireplaceQu == "Gd"] <- 4
@@ -372,8 +375,8 @@ Garage Type: Binary
 
 ```{r}
 
-price <- summarize(group_by(train, GarageType),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, GarageType),
+ #         mean(SalePrice, na.rm=T))
 
 train$gar_attach[train$GarageType %in% c("Attchd", "BuiltIn")] <- 1
 train$gar_attach[!train$GarageType %in% c("Attchd", "BuiltIn")] <- 0
@@ -382,8 +385,8 @@ train$gar_attach[!train$GarageType %in% c("Attchd", "BuiltIn")] <- 0
 Garage interior: Binary
 
 ```{r}
-price <- summarize(group_by(train, GarageFinish),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, GarageFinish),
+ #         mean(SalePrice, na.rm=T))
 
 train$gar_finish[train$GarageFinish %in% c("Fin", "RFn")] <- 1
 train$gar_finish[!train$GarageFinish %in% c("Fin", "RFn")] <- 0
@@ -392,8 +395,8 @@ train$gar_finish[!train$GarageFinish %in% c("Fin", "RFn")] <- 0
 Garage Quality: 5 bands
 
 ```{r}
-price <- summarize(group_by(train, GarageQual),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, GarageQual),
+ #         mean(SalePrice, na.rm=T))
 
 train$garqual[train$GarageQual == "Ex"] <- 5
 train$garqual[train$GarageQual == "Gd"] <- 4
@@ -405,8 +408,8 @@ train$garqual[train$GarageQual == "Po" | is.na(train$GarageQual)] <- 1
 Garage Condition: 5 bands
 
 ```{r}
-price <- summarize(group_by(train, GarageCond),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, GarageCond),
+ #         mean(SalePrice, na.rm=T))
 
 train$garqual2[train$GarageCond == "Ex"] <- 5
 train$garqual2[train$GarageCond == "Gd"] <- 4
@@ -418,8 +421,8 @@ train$garqual2[train$GarageCond == "Po" | is.na(train$GarageCond)] <- 1
 Paved driveway: Binary Paved vs Unpaved
 
 ```{r}
-price <- summarize(group_by(train, PavedDrive),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, PavedDrive),
+ #         mean(SalePrice, na.rm=T))
 
 train$paved_drive[train$PavedDrive == "Y"] <- 1
 train$paved_drive[!train$PavedDrive != "Y"] <- 0
@@ -429,8 +432,8 @@ train$paved_drive[is.na(train$paved_drive)] <- 0
 Home Functionality: Binary
 
 ```{r}
-price <- summarize(group_by(train, Functional),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, Functional),
+ #         mean(SalePrice, na.rm=T))
 
 train$housefunction[train$Functional %in% c("Typ", "Mod")] <- 1
 train$housefunction[!train$Functional %in% c("Typ", "Mod")] <- 0
@@ -439,8 +442,8 @@ train$housefunction[!train$Functional %in% c("Typ", "Mod")] <- 0
 Pool Quality: Binary 
 
 ```{r}
-price <- summarize(group_by(train, PoolQC),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, PoolQC),
+ #         mean(SalePrice, na.rm=T))
 
 train$pool_good[train$PoolQC %in% c("Ex")] <- 1
 train$pool_good[!train$PoolQC %in% c("Ex")] <- 0
@@ -449,8 +452,8 @@ train$pool_good[!train$PoolQC %in% c("Ex")] <- 0
 Fence Quality: Binary
 
 ```{r}
-price <- summarize(group_by(train, Fence),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, Fence),
+ #         mean(SalePrice, na.rm=T))
 
 train$priv_fence[train$Fence %in% c("GdPrv")] <- 1
 train$priv_fence[!train$Fence %in% c("GdPrv")] <- 0
@@ -459,8 +462,8 @@ train$priv_fence[!train$Fence %in% c("GdPrv")] <- 0
 Sale Type: 5 bands
 
 ```{r}
-price <- summarize(group_by(train, SaleType),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, SaleType),
+ #         mean(SalePrice, na.rm=T))
 
 # price[order(price$`mean(SalePrice, na.rm = T)`),]
 
@@ -474,8 +477,8 @@ train$sale_cat[train$SaleType %in% c("Oth")] <- 1
 Sale Condition: 4 bands
 
 ```{r}
-price <- summarize(group_by(train, SaleCondition),
-          mean(SalePrice, na.rm=T))
+#price <- summarize(group_by(train, SaleCondition),
+ #         mean(SalePrice, na.rm=T))
 
 # price[order(price$`mean(SalePrice, na.rm = T)`),]
 
