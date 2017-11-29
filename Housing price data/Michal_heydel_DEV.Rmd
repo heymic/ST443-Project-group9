@@ -27,9 +27,6 @@ df <- rbind(train,testing_kaggle)
 hist(df$SalePrice)
 ```
 
-
-
-
 ```{r}
 colSums(sapply(df, is.na))
 ```
@@ -40,9 +37,12 @@ for(i in colnames(df[,sapply(df, is.character)])){
 }
 ```
 
+
+
 ```{r}
 colSums(sapply(df, is.na))
 ```
+
 ```{r LotFrontage}
 df$LotFrontage[which(is.na(df$LotFrontage))] <- mean(df$LotFrontage,na.rm = T)
 ```
@@ -50,15 +50,6 @@ df$LotFrontage[which(is.na(df$LotFrontage))] <- mean(df$LotFrontage,na.rm = T)
 ```{r MasVnrArea}
 df$MasVnrArea[which(is.na(df$MasVnrArea))] <- mean(df$LotFrontage,na.rm = T)
 ```
-
-```{r GarageYrBlt}
-table(df$GarageYrBlt)
-df$GarageYrBlt[which(is.na(df$GarageYrBlt))] <- 0
-table(df$GarageYrBlt)
-
-```
-
-
 
 ```{r BsmtFinSF1 BsmtFinSF2     BsmtUnfSF   TotalBsmtSF}
 x = c("BsmtFinSF1","BsmtFinSF2", "BsmtUnfSF", "TotalBsmtSF", "BsmtFullBath", "BsmtHalfBath", "GarageYrBlt", "GarageCars", "GarageArea")
@@ -68,10 +59,28 @@ for(i in x){
   df[,i][which(is.na(df[,i]))] <- 0
 }
 
-
 ```
 
 ```{r}
 colSums(sapply(df, is.na))
+```
+
+
+```{r}
+for(i in colnames(df[,sapply(df, is.character)])){
+    df[,i] <- as.factor(df[,i])
+}
+```
+
+```{r}
+# These are also categorical Variables
+df$OverallCond <- as.factor(df$OverallCond)
+df$OverallQual <- as.factor(df$OverallQual)
+```
+
+
+
+```{r}
+str(df)
 ```
 
