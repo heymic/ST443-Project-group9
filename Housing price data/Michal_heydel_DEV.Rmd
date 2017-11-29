@@ -1,0 +1,77 @@
+---
+title: "Machine Learning Project"
+author: "Michal Heydel"
+date: "29 November 2017"
+output: pdf_document
+---
+
+```{r}
+setwd("C:/Users/Michal/Documents/01- Master Degree/GitHub/ST443-Project-group9/Housing price data")
+getwd()
+```
+```{r}
+train = read.csv("train.csv", row.names = "Id", stringsAsFactors=FALSE)
+testing_kaggle = read.csv("test.csv", row.names = "Id", stringsAsFactors=FALSE)
+```
+
+```{r}
+#combining train and test data for quicker data prep
+testing_kaggle$SalePrice <- NA
+train$isTrain <- 1
+testing_kaggle$isTrain <- 0
+df <- rbind(train,testing_kaggle)
+```
+
+
+```{r}
+hist(df$SalePrice)
+```
+
+
+
+
+```{r}
+colSums(sapply(df, is.na))
+```
+```{r}
+for(i in colnames(df[,sapply(df, is.character)])){
+    
+  df[,i][which(is.na(df[,i]))] <- "None"
+}
+```
+
+```{r}
+colSums(sapply(df, is.na))
+```
+```{r LotFrontage}
+df$LotFrontage[which(is.na(df$LotFrontage))] <- mean(df$LotFrontage,na.rm = T)
+```
+
+```{r MasVnrArea}
+df$MasVnrArea[which(is.na(df$MasVnrArea))] <- mean(df$LotFrontage,na.rm = T)
+```
+
+```{r GarageYrBlt}
+table(df$GarageYrBlt)
+df$GarageYrBlt[which(is.na(df$GarageYrBlt))] <- 0
+table(df$GarageYrBlt)
+
+```
+
+
+
+```{r BsmtFinSF1 BsmtFinSF2     BsmtUnfSF   TotalBsmtSF}
+x = c("BsmtFinSF1","BsmtFinSF2", "BsmtUnfSF", "TotalBsmtSF", "BsmtFullBath", "BsmtHalfBath", "GarageYrBlt", "GarageCars", "GarageArea")
+
+for(i in x){
+    
+  df[,i][which(is.na(df[,i]))] <- 0
+}
+
+
+```
+
+```{r}
+colSums(sapply(df, is.na))
+```
+
