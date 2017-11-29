@@ -44,7 +44,7 @@ colSums(sapply(df, is.na))
 ```
 
 ```{r LotFrontage}
-df$LotFrontage[which(is.na(df$LotFrontage))] <- mean(df$LotFrontage,na.rm = T)
+df$LotFrontage[which(is.na(df$LotFrontage))] <- median(df$LotFrontage,na.rm = T)
 ```
 
 ```{r MasVnrArea}
@@ -83,5 +83,120 @@ df$OverallQual <- as.factor(df$OverallQual)
 
 ```{r}
 str(df)
+```
+
+####REGRESSION
+```{r}
+train <- df[df$isTrain==1,]
+test <- df[df$isTrain==0,]
+
+train$isTrain <- NULL
+```
+
+```{r}
+smp_size = floor(0.8 * nrow(train))
+set.seed(1)
+
+train_ind <-sample(seq_len(nrow(train)),smp_size, replace = F)
+```
+
+```{r}
+library(boot)
+library(leaps)
+```
+
+```{r}
+# FROM CLASS 5
+K <- 10
+set.seed(11)
+folds <-sample(rep(1:10, length=nrow(train)))
+table(folds)
+## We initialize a error matrix with row (10 different folds) and column (19 different predictors)
+cv.errors <-matrix(0, 10, 19)
+```
+
+
+###Below is copied from a link, don't use it. Need to write alone a code. 
+
+```{r}
+library(caret)
+```
+
+# Experimenting with Machine Learning Algorithms
+
+## Model 1: Linear Model
+```{r Linear Models, warning=FALSE}
+myControl = trainControl(method = "cv", number = 5, verboseIter = FALSE)
+model_lm = train(SalePrice ~ ., 
+              data = train,
+              method = "lm",
+              trControl = myControl)
+model_lm
+```
+
+
+## Model 2: Random Forest
+```{r Random Forest, warning=FALSE}
+model_rf = train(SalePrice ~ ., 
+              data = train,
+              tuneLength = 1,
+              method = "ranger",
+              importance = 'impurity',
+              trControl = myControl)
+
+
+model_rf
+
+```
+## Model 3: Random Forest with two mtry values
+```{r Random Forest with two mtry values, warning=FALSE}
+model_rf2 = train(SalePrice ~ ., 
+                 data = train,
+                 tuneLength = 2,
+                 method = "ranger",
+                 importance = 'impurity',
+                 trControl = myControl)
+model_rf2
+```
+
+```{r}
+fit.glmnet <- train(SalePrice~.,train,trControl = myControl,
+                    method="glmnet",tuneGrid=expand.grid(.alpha = seq(0,1,by=0.05), 
+                                                         .lambda = seq(0, 0.08, by = 0.01)))
+
+print(fit.glmnet)
+
+```
+```{r}
+library(rminer)
+```
+
+```{r Testing RMSE and R2}
+
+set.seed(100)
+inTrain <- createDataPartition(train$SalePrice, p=0.7, list=FALSE)
+
+str(inTrain)
+#inTrain
+
+saleTrain <- train[inTrain,]
+saleTest <- train[-inTrain,]
+
+myTrainControl = trainControl(method = "cv", number = 5, verboseIter = FALSE)
+fit.glmnet <- train(SalePrice~.,saleTrain,trControl = myTrainControl,
+                    method="glmnet",tuneGrid=expand.grid(.alpha = seq(0,1,by=0.05), 
+                                                         .lambda = seq(0, 0.08, by = 0.01)))
+
+predicted <- predict(fit.glmnet, saleTest)
+
+
+```
+```{r}
+mmetric(saleTest$SalePrice, predicted, metric=c("RMSE","R2"))
+```
+
+```{r}
+sqrt(mean((saleTest$SalePrice - predicted)^2))/mean(saleTest$SalePrice)
+
 ```
 
