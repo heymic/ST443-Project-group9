@@ -5,6 +5,30 @@ date: "29 November 2017"
 output: pdf_document
 ---
 
+```{r warning=FALSE, message=FALSE}
+require(Matrix) # matrix transformations
+require(glmnet) # ridge, lasso & elastinet
+require(xgboost) # gbm
+require(randomForest)
+require(Metrics) # rmse
+require(dplyr) # load this in last so plyr doens't overlap it
+require(caret) # one hot encoding
+require(scales) # plotting $$
+require(e1071) # skewness
+require(corrplot) # correlation plot
+```
+
+
+
+```{r}
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+```
+
+
 ```{r}
 setwd("C:/Users/Michal/Documents/01- Master Degree/GitHub/ST443-Project-group9/Housing price data")
 getwd()
@@ -30,41 +54,108 @@ hist(df$SalePrice)
 ```{r}
 colSums(sapply(df, is.na))
 ```
+
+```{r warning=FALSE, message=FALSE}
+df[,c('PoolQC','PoolArea')] %>%
+  group_by(PoolQC) %>%
+  summarise(mean = mean(PoolArea), counts = n()) 
+```
+```{r PoolArea}
+df[(df$PoolArea > 0) & is.na(df$PoolQC),c('PoolQC','PoolArea')]
+```
 ```{r}
-for(i in colnames(df[,sapply(df, is.character)])){
-    
-  df[,i][which(is.na(df[,i]))] <- "None"
+df[2421,'PoolQC'] = 'Ex'
+df[2504,'PoolQC'] = 'Ex'
+df[2600,'PoolQC'] = 'Fa'
+df$PoolQC[is.na(df$PoolQC)] = 'None'
+```
+*garage Yrblt is the same as the house was  built in
+```{r GarageYrBlt}
+length(which(df$GarageYrBlt == df$YearBuilt))
+df[which(is.na(df$GarageYrBlt)), 'GarageYrBlt'] <- df[which(is.na(df$GarageYrBlt)), 'YearBuilt']
+```
+
+
+
+```{r}
+garage.cols <- c('GarageArea', 'GarageCars', 'GarageQual', 'GarageFinish', 'GarageCond', 'GarageType')
+df[is.na(df$GarageCond),garage.cols]
+```
+```{r}
+for(i in garage.cols){
+if (sapply(df[i], is.numeric) == TRUE){
+    df[,i][which(is.na(df[,i]))] <- 0
+  }
+  else{
+    df[,i][which(is.na(df[,i]))] <- "None"
+  }
 }
 ```
 
 
+```{r KitchenQual}
+df$KitchenQual[which(is.na(df$KitchenQual))] <- Mode(df$KitchenQual)
+```
 
 ```{r}
-colSums(sapply(df, is.na))
+df[is.na(df$MSZoning),c('MSZoning','MSSubClass')]
+table(df$MSZoning, df$MSSubClass)
+
 ```
+```{r}
+df$MSZoning[c(2217, 2905)] = 'RL'
+df$MSZoning[c(1916, 2251)] = 'RM'
+```
+
+
+#There are 486 Nas in LotFrontage, cannot do much - set the NAs to median. Maybe one can do some grouping.
 
 ```{r LotFrontage}
 df$LotFrontage[which(is.na(df$LotFrontage))] <- median(df$LotFrontage,na.rm = T)
 ```
 
-```{r MasVnrArea}
-df$MasVnrArea[which(is.na(df$MasVnrArea))] <- mean(df$LotFrontage,na.rm = T)
+#there are 2721  NAs in Alley cannot do much - set them equal to "None"
+```{r Alley}
+df$Alley[which(is.na(df$Alley))] <- "None"
 ```
 
-```{r BsmtFinSF1 BsmtFinSF2     BsmtUnfSF   TotalBsmtSF}
-x = c("BsmtFinSF1","BsmtFinSF2", "BsmtUnfSF", "TotalBsmtSF", "BsmtFullBath", "BsmtHalfBath", "GarageYrBlt", "GarageCars", "GarageArea")
+```{r MasVnrArea MasVnrType}
+#df[(df$MasVnrArea > 0) & (is.na(df$MasVnrType)),c('MasVnrArea','MasVnrType')]
+df[2611, 'MasVnrType'] = 'BrkFace'
+df$MasVnrType[is.na(df$MasVnrType)] = 'None'
+df$MasVnrArea[is.na(df$MasVnrArea)] = 0
+```
 
-for(i in x){
-    
-  df[,i][which(is.na(df[,i]))] <- 0
+## for small number of NAs we apply Mode to the categorical, and median to the continous
+```{r}
+for(i in colnames(df[,sapply(df, is.character)])){
+  if (sum(is.na(df[,i])) < 5){
+    df[,i][which(is.na(df[,i]))] <- Mode(df[,i])
+  }
 }
-
 ```
 
 ```{r}
-colSums(sapply(df, is.na))
+for(i in colnames(df[,sapply(df, is.integer)])){
+  if (sum(is.na(df[,i])) < 5){
+    df[,i][which(is.na(df[,i]))] <- median(df[,i], na.rm = T)
+  }
+}
 ```
 
+## for large number of NAs we apply string "None" to the categorical as a seperate Level, and 0 to the continous
+
+```{r}
+for(i in colnames(df[,sapply(df, is.character)])){
+    df[,i][which(is.na(df[,i]))] <- "None"
+}
+```
+
+#we have filled in all the missing values. The remaining ones are the SalesPrice in the predicting Dataset <- is fine!
+```{r}
+colSums(sapply(df, is.na))
+sum(is.na(df))
+```
 
 ```{r}
 for(i in colnames(df[,sapply(df, is.character)])){
@@ -72,131 +163,19 @@ for(i in colnames(df[,sapply(df, is.character)])){
 }
 ```
 
+#####Not sure about this one is this a categorical?
 ```{r}
 # These are also categorical Variables
 df$MSSubClass <- as.factor(df$MSSubClass)
-df$OverallCond <- as.factor(df$OverallCond)
-df$OverallQual <- as.factor(df$OverallQual)
 ```
-
-
 
 ```{r}
 str(df)
 ```
-
-####REGRESSION
+### THIS CODE IS BRILLIANT IT TURN ALL THE FACTOR TO NUMERICAL VALUES FROM 1 to max(factor_level)
 ```{r}
-train <- df[df$isTrain==1,]
-test <- df[df$isTrain==0,]
-
-train$isTrain <- NULL
+df <- data.frame(lapply(df, function(x) as.numeric(x)))
+str(df)
 ```
 
-```{r}
-smp_size = floor(0.8 * nrow(train))
-set.seed(1)
-
-train_ind <-sample(seq_len(nrow(train)),smp_size, replace = F)
-```
-
-```{r}
-library(boot)
-library(leaps)
-```
-
-```{r}
-# FROM CLASS 5
-K <- 10
-set.seed(11)
-folds <-sample(rep(1:10, length=nrow(train)))
-table(folds)
-## We initialize a error matrix with row (10 different folds) and column (19 different predictors)
-cv.errors <-matrix(0, 10, 19)
-```
-
-
-###Below is copied from a link, don't use it. Need to write alone a code. 
-
-```{r}
-library(caret)
-```
-
-# Experimenting with Machine Learning Algorithms
-
-## Model 1: Linear Model
-```{r Linear Models, warning=FALSE}
-myControl = trainControl(method = "cv", number = 5, verboseIter = FALSE)
-model_lm = train(SalePrice ~ ., 
-              data = train,
-              method = "lm",
-              trControl = myControl)
-model_lm
-```
-
-
-## Model 2: Random Forest
-```{r Random Forest, warning=FALSE}
-model_rf = train(SalePrice ~ ., 
-              data = train,
-              tuneLength = 1,
-              method = "ranger",
-              importance = 'impurity',
-              trControl = myControl)
-
-
-model_rf
-
-```
-## Model 3: Random Forest with two mtry values
-```{r Random Forest with two mtry values, warning=FALSE}
-model_rf2 = train(SalePrice ~ ., 
-                 data = train,
-                 tuneLength = 2,
-                 method = "ranger",
-                 importance = 'impurity',
-                 trControl = myControl)
-model_rf2
-```
-
-```{r}
-fit.glmnet <- train(SalePrice~.,train,trControl = myControl,
-                    method="glmnet",tuneGrid=expand.grid(.alpha = seq(0,1,by=0.05), 
-                                                         .lambda = seq(0, 0.08, by = 0.01)))
-
-print(fit.glmnet)
-
-```
-```{r}
-library(rminer)
-```
-
-```{r Testing RMSE and R2}
-
-set.seed(100)
-inTrain <- createDataPartition(train$SalePrice, p=0.7, list=FALSE)
-
-str(inTrain)
-#inTrain
-
-saleTrain <- train[inTrain,]
-saleTest <- train[-inTrain,]
-
-myTrainControl = trainControl(method = "cv", number = 5, verboseIter = FALSE)
-fit.glmnet <- train(SalePrice~.,saleTrain,trControl = myTrainControl,
-                    method="glmnet",tuneGrid=expand.grid(.alpha = seq(0,1,by=0.05), 
-                                                         .lambda = seq(0, 0.08, by = 0.01)))
-
-predicted <- predict(fit.glmnet, saleTest)
-
-
-```
-```{r}
-mmetric(saleTest$SalePrice, predicted, metric=c("RMSE","R2"))
-```
-
-```{r}
-sqrt(mean((saleTest$SalePrice - predicted)^2))/mean(saleTest$SalePrice)
-
-```
 
