@@ -4,7 +4,7 @@ author: "Michal Heydel"
 date: "29 November 2017"
 output: pdf_document
 ---
-
+ignore this libaries, after i need to pick the one we use
 ```{r warning=FALSE, message=FALSE}
 require(Matrix) # matrix transformations
 require(glmnet) # ridge, lasso & elastinet
@@ -18,8 +18,6 @@ require(e1071) # skewness
 require(corrplot) # correlation plot
 ```
 
-
-
 ```{r}
 Mode <- function(x) {
   ux <- unique(x)
@@ -27,7 +25,6 @@ Mode <- function(x) {
 }
 
 ```
-
 
 ```{r}
 setwd("C:/Users/Michal/Documents/01- Master Degree/GitHub/ST443-Project-group9/Housing price data")
@@ -45,7 +42,6 @@ train$isTrain <- 1
 testing_kaggle$isTrain <- 0
 df <- rbind(train,testing_kaggle)
 ```
-
 
 ```{r}
 hist(df$SalePrice)
@@ -69,18 +65,18 @@ df[2504,'PoolQC'] = 'Ex'
 df[2600,'PoolQC'] = 'Fa'
 df$PoolQC[is.na(df$PoolQC)] = 'None'
 ```
-*garage Yrblt is the same as the house was  built in
+
+*Garage Yrblt is the same as the house was  built in. - Check by the condition(first line of code)
 ```{r GarageYrBlt}
 length(which(df$GarageYrBlt == df$YearBuilt))
 df[which(is.na(df$GarageYrBlt)), 'GarageYrBlt'] <- df[which(is.na(df$GarageYrBlt)), 'YearBuilt']
 ```
 
-
-
 ```{r}
 garage.cols <- c('GarageArea', 'GarageCars', 'GarageQual', 'GarageFinish', 'GarageCond', 'GarageType')
-df[is.na(df$GarageCond),garage.cols]
+#df[is.na(df$GarageCond),garage.cols]
 ```
+to numeric - 0, to categorical = 'None'
 ```{r}
 for(i in garage.cols){
 if (sapply(df[i], is.numeric) == TRUE){
@@ -92,12 +88,11 @@ if (sapply(df[i], is.numeric) == TRUE){
 }
 ```
 
-
 ```{r KitchenQual}
 df$KitchenQual[which(is.na(df$KitchenQual))] <- Mode(df$KitchenQual)
 ```
 
-```{r}
+```{r MSZoning MSSubClass}
 df[is.na(df$MSZoning),c('MSZoning','MSSubClass')]
 table(df$MSZoning, df$MSSubClass)
 
@@ -108,17 +103,18 @@ df$MSZoning[c(1916, 2251)] = 'RM'
 ```
 
 
-#There are 486 Nas in LotFrontage, cannot do much - set the NAs to median. Maybe one can do some grouping.
+There are 486 Nas in LotFrontage, cannot do much - set the NAs to median. Maybe one can do some grouping.
 
 ```{r LotFrontage}
 df$LotFrontage[which(is.na(df$LotFrontage))] <- median(df$LotFrontage,na.rm = T)
 ```
 
-#there are 2721  NAs in Alley cannot do much - set them equal to "None"
+there are 2721  NAs in Alley cannot do much - set them equal to "None"
 ```{r Alley}
 df$Alley[which(is.na(df$Alley))] <- "None"
 ```
 
+one is missing the rest as before
 ```{r MasVnrArea MasVnrType}
 #df[(df$MasVnrArea > 0) & (is.na(df$MasVnrType)),c('MasVnrArea','MasVnrType')]
 df[2611, 'MasVnrType'] = 'BrkFace'
@@ -126,7 +122,7 @@ df$MasVnrType[is.na(df$MasVnrType)] = 'None'
 df$MasVnrArea[is.na(df$MasVnrArea)] = 0
 ```
 
-## for small number of NAs we apply Mode to the categorical, and median to the continous
+for small number of NAs we apply Mode to the categorical, and median to the continous
 ```{r}
 for(i in colnames(df[,sapply(df, is.character)])){
   if (sum(is.na(df[,i])) < 5){
@@ -134,6 +130,7 @@ for(i in colnames(df[,sapply(df, is.character)])){
   }
 }
 ```
+
 
 ```{r}
 for(i in colnames(df[,sapply(df, is.integer)])){
@@ -143,7 +140,7 @@ for(i in colnames(df[,sapply(df, is.integer)])){
 }
 ```
 
-## for large number of NAs we apply string "None" to the categorical as a seperate Level, and 0 to the continous
+for large number of NAs we apply string "None" to the categorical as a seperate Level, and 0 to the continous
 
 ```{r}
 for(i in colnames(df[,sapply(df, is.character)])){
@@ -151,10 +148,10 @@ for(i in colnames(df[,sapply(df, is.character)])){
 }
 ```
 
-#we have filled in all the missing values. The remaining ones are the SalesPrice in the predicting Dataset <- is fine!
+we have filled in all the missing values. The remaining ones are the SalesPrice in the predicting Dataset <- is fine!
 ```{r}
 colSums(sapply(df, is.na))
-sum(is.na(df))
+sum(is.na(df)) == 1459
 ```
 
 ```{r}
@@ -163,7 +160,7 @@ for(i in colnames(df[,sapply(df, is.character)])){
 }
 ```
 
-#####Not sure about this one is this a categorical?
+Not sure about this one is this a categorical?
 ```{r}
 # These are also categorical Variables
 df$MSSubClass <- as.factor(df$MSSubClass)
@@ -172,7 +169,7 @@ df$MSSubClass <- as.factor(df$MSSubClass)
 ```{r}
 str(df)
 ```
-### THIS CODE IS BRILLIANT IT TURN ALL THE FACTOR TO NUMERICAL VALUES FROM 1 to max(factor_level)
+##### THIS CODE IS BRILLIANT IT TURN ALL THE FACTOR TO NUMERICAL VALUES FROM 1 to max(factor_level)
 ```{r}
 df <- data.frame(lapply(df, function(x) as.numeric(x)))
 str(df)
