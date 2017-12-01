@@ -228,7 +228,7 @@ MSdwelling.list <- c('20' = 1, '30'= 0, '40' = 0, '45' = 0,'50' = 0, '60' = 1, '
 
 df$MSSubClass <- as.numeric(MSdwelling.list[as.character(df$MSSubClass)])
 ```
-We've transformed all the categoric features with an ordinal scale into a numeric columns. 
+We've transformed all the categoric features with an ordinal scale into numeric columns. 
 
 
 ```{r}
@@ -247,7 +247,6 @@ str(df)
 ##### THIS CODE IS BRILLIANT IT TURN ALL THE FACTOR TO NUMERICAL VALUES FROM 1 to max(factor_level)
 ```{r, eval = FALSE}
 df <- data.frame(lapply(df, function(x) as.numeric(x)))
-
 ```
 
 
