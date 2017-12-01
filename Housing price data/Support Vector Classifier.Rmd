@@ -1,0 +1,37 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Install Packages
+
+```{r}
+install.packages("e1071")
+library(e1071)
+```
+
+Basic SVM Model
+
+```{r}
+svmfit <-svm(Classifier~.-SalePrice, data=train.train_df, kernel="linear", cost=10, scale=FALSE)
+print(svmfit)
+svmfit$index
+```
+
+Tuning SVM Model
+
+```{r}
+tune.out <-tune(svm, Classifier~. -SalePrice , data=train.train_df, kernel="linear", ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)))
+summary(tune.out)
+```
+## We see that cost=0.001 results in the lowest cross validation error rate
+## tune() function stores the best model obtained, which can be assessed as follows
+
+```{r}
+bestmod <-tune.out$best.model
+summary(bestmod)
+
+svm_pred <-predict(bestmod, test.train_df)
+table(predict=svm_pred, truth=Classifier.test)
+mean(svm_pred!=Classifier.test)
+```
