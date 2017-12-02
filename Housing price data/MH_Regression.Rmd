@@ -7,26 +7,26 @@ output: html_document
 ```{r, warning=FALSE, message=FALSE}
 library(boot)
 library(leaps)
-library(tree)
-library(MASS)
-#library(Metrics)
-#library(corrplot)
-library(randomForest)
-#library(lars)
-library(ggplot2)
-library(xgboost)
-library(Matrix)
-library(methods)
-library(caret)
+library(tree) # Normal Tree
+library(randomForest) # random Forest
+library(xgboost) # boosting trees
+library(Matrix) #?
+library(methods) #?
+library(caret) # for tuning xgboost
 
 ```
 
-```{r}
+```{r, eval = FALSE}
+str(df)
+```
+
+```{r, eval=FALSE}
 for(i in colnames(df[,sapply(df, is.character)])){
     df[,i] <- as.factor(df[,i])
 }
-str(df)
+
 ```
+
 ```{r}
 train_df <- df[df$isTrain==1,]
 test_kaggle <- df[df$isTrain==0,]
@@ -36,16 +36,20 @@ test_kaggle$isTrain <- NULL
 test_kaggle$SalePrice <- NULL
 ```
 
+```{r}
+X_train<- model.matrix(SalePrice~.-1, data = train_df)
+y_train <- train_df$SalePrice
+X_test <- model.matrix(~.-1, data=test_kaggle)
+```
 
 
-
-```{r, eval = False}
+```{r,  eval = FALSE, include= FALSE}
 for(i in colnames(train_df[,sapply(train_df, is.character)])){
     train_df[,i] <- as.factor(train_df[,i])
 }
 ```
 
-```{r, eval = False}
+```{r,  eval = FALSE, include= FALSE}
 for(i in colnames(test_kaggle[,sapply(test_kaggle, is.character)])){
     test_kaggle[,i] <- as.factor(test_kaggle[,i])
 }
@@ -66,54 +70,48 @@ for(i in colnames(train_df[,sapply(train_df, is.factor)])){
 
 #regression with all the parameters - just as a benchmark
 
-```{r}
+```{r, eval = FALSE}
 lm_fit_all = lm(SalePrice ~., data = train_df) 
 #summary(lm_fit_all)
 ```
 
-```{r, warning=FALSE, message=FALSE}
+```{r, warning=FALSE, message=FALSE,  eval = FALSE}
 prediction_LR_ALL <- predict(lm_fit_all, test_kaggle, type="response")
 ```
 
-```{r}
+```{r,  eval = FALSE}
 prediction_LR_ALL <- as.data.frame(prediction_LR_ALL)
 prediction_LR_ALL <- cbind(Id = rownames(prediction_LR_ALL), SalesPrice = prediction_LR_ALL)
 ```
 
-```{r, eval = False}
+```{r,  eval = FALSE}
 write.table(prediction_LR_ALL, file="prediction_LR_ALL.csv",col.names = c("Id","SalePrice"), sep =',', row.names = FALSE)
 ```
 
 
 ####LASSO -------------------------------------------------------------------------------------
 
-```{r}
-## Lasso regression
-
-x <- model.matrix(SalePrice~.-1, data = train_df)
-y <- train$SalePrice
-```
-
-
-```{r}
-cv.lasso <-cv.glmnet(x, y, nfolds = 10, alpha = 1)
+```{r,  eval = FALSE}
+cv.lasso <-cv.glmnet(X_train, y_train, nfolds = 10, alpha = 1)
 plot(cv.lasso)
 #here is an example why should we apply the one standard deviation error rule!
 ```
-```{r}
+```{r,  eval = FALSE}
 penalty_min <- cv.lasso$lambda.min #optimal lambda
 penalty_1se <- cv.lasso$lambda.1se # 1 Standard Error Apart
-fit.lasso_min <-glmnet(x, y, alpha = 1, lambda = penalty_min ) #estimate the model with min lambda
-fit.lasso_1se <-glmnet(x, y, alpha = 1, lambda = penalty_1se ) #estimate the model with 1se apart
+fit.lasso_min <-glmnet(X_train, y_train, alpha = 1, lambda = penalty_min) #estimate the model with min lambda
+fit.lasso_1se <-glmnet(X_train, y_train, alpha = 1, lambda = penalty_1se) #estimate the model with 1se apart
 ```
 
-```{r}
-test_kaggle1 <- model.matrix(~., data=test_kaggle)
-prediction_LASSO_min <- predict(fit.lasso_min, test_kaggle1)
-prediction_LASSO_1se <- predict(fit.lasso_1se, test_kaggle1)
+```{r,  eval = FALSE}
+prediction_LASSO_min_log <- predict(fit.lasso_min, X_test)
+prediction_LASSO_1se_log <- predict(fit.lasso_1se, X_test)
+
+prediction_LASSO_min <- exp(prediction_LASSO_min_log)
+prediction_LASSO_1se <- exp(prediction_LASSO_1se_log)
 ```
 
-```{r}
+```{r, eval = FALSE}
 prediction_LASSO_min <-cbind(Id = rownames(prediction_LASSO_min), SalesPrice = prediction_LASSO_min)
 prediction_LASSO_1se <- cbind(Id = rownames(prediction_LASSO_1se), SalesPrice = prediction_LASSO_1se)
 ```
@@ -125,14 +123,14 @@ write.table(prediction_LASSO_1se, file="prediction_LASSO_1se.csv",col.names = c(
 
 ### REGRESSION TREE - SIMPLE---------------------------------------------------------------------------
 
-```{r}
+```{r,  eval = FALSE}
 ## Regression Tree
 tree.SalePrice <-tree(SalePrice~., data =train_df)
 summary(tree.SalePrice)
 plot(tree.SalePrice)
 text(tree.SalePrice, pretty=1)
 ```
-```{r}
+```{r,  eval = FALSE}
 cv.SalePrice <-cv.tree(tree.SalePrice, K = 10)
 plot(cv.SalePrice$size, cv.SalePrice$dev, type="b")
 ## In this case, the most complex tree is selected by cross-validation
@@ -142,13 +140,13 @@ plot(prune.SalePrice)
 text(prune.SalePrice, pretty=1)
 cv.SalePrice$dev # no PRUNING DONE
 ```
-```{r}
+```{r,  eval = FALSE}
 prediction_TREE <- predict(prune.SalePrice ,test_kaggle)
 ```
-```{r}
+```{r,  eval = FALSE}
 prediction_TREE <- cbind(Id = rownames(prediction_TREE), SalesPrice = prediction_TREE)
 ```
-```{r, eval = False}
+```{r, eval = FALSE}
 write.table(prediction_TREE, file="prediction_TREE.csv",col.names = c("Id", "SalePrice"), sep =',', row.names = FALSE)
 ```
 
@@ -160,7 +158,7 @@ write.table(prediction_TREE, file="prediction_TREE.csv",col.names = c("Id", "Sal
 
 
 
-```{r}
+```{r,  eval = FALSE}
 ##Bagging
 library(randomForest)
 set.seed(1)
@@ -168,46 +166,50 @@ set.seed(1)
 bag.SalePrice <-randomForest(SalePrice~., data=train_df, mtry= 79, importance=TRUE)
 bag.SalePrice
 ```
-```{r}
+
+```{r,  eval = FALSE}
 prediction_bag <- predict(bag.SalePrice, newdata = test_kaggle)
 ```
-```{r}
+
+```{r,  eval = FALSE}
 prediction_bag <- cbind(Id = rownames(prediction_bag), SalesPrice = prediction_bag)
 prediction_bag <- cbind(Id = rownames(prediction_bag), SalesPrice = prediction_bag)
 ```
-```{r, eval = False}
+```{r,  eval = FALSE}
 write.table(prediction_bag, file="prediction_bag.csv",col.names = c("Id", "SalePrice"), sep =',', row.names = FALSE)
 ```
 
 #Random Forest m= p/3 ------------------------------------------------------------------------------------------
 
-```{r}
+```{r, eval = FALSE}
 ## We could change the number of trees grown by randomForest() using ntree argument
 RF_p3.SalePrice <-randomForest(SalePrice~., data=train_df, mtry = 26, importance=TRUE)
 ```
 
-```{r}
-prediction_RF_p3 <- predict(RF_p3.SalePrice, newdata = test_kaggle)
+```{r, eval = FALSE}
+prediction_RF_p3_log <- predict(RF_p3.SalePrice, newdata = test_kaggle)
+prediction_RF_p3 <- exp(prediction_RF_p3_log)
 ```
-```{r}
-prediction_RF_p3 <- cbind(Id = rownames(prediction_RF_p3), SalesPrice = prediction_RF_p3)
-prediction_RF_p3 <- cbind(Id = rownames(prediction_RF_p3), SalesPrice = prediction_RF_p3)
+
+```{r, eval = FALSE}
+prediction_RF_p3 <- cbind(Id = names(prediction_RF_p3), SalesPrice = prediction_RF_p3)
 ```
-```{r, eval = False}
+
+```{r, eval = FALSE}
 write.table(prediction_RF_p3, file="prediction_RF_p3.csv",col.names = c("Id", "SalePrice"), sep =',', row.names = FALSE)
 ```
 
 #Random Forest ------------------------------------------------------------------------------------------
 
-```{r}
+```{r,  eval = FALSE}
 ## We could change the number of trees grown by randomForest() using ntree argument
 RF.SalePrice <-randomForest(SalePrice~., data=train_df, importance=TRUE)
 ```
 
-```{r}
+```{r,  eval = FALSE}
 prediction_RF <- predict(RF.SalePrice, newdata = test_kaggle)
 ```
-```{r}
+```{r,  eval = FALSE}
 prediction_RF <- cbind(Id = rownames(prediction_RF), SalesPrice = prediction_RF)
 prediction_RF <- cbind(Id = rownames(prediction_RF), SalesPrice = prediction_RF)
 ```
@@ -216,100 +218,205 @@ write.table(prediction_RF, file="prediction_RF.csv",col.names = c("Id", "SalePri
 ```
 
 
+###Tuning randomForest---------------------------------------------------------------------------------
+
+
+
+```{r,  eval = FALSE}
+x_train_df <- train_df
+x_train_df$SalePrice <- NULL
+```
+
+```{r,  eval = FALSE}
+results <- rfcv(x_train_df, y_train, cv.fold=10, scale="log", step=0.7)
+```
+
+
+```{r,  eval = FALSE}
+## We could change the number of trees grown by randomForest() using ntree argument
+RF.SalePrice_tuned <-randomForest(SalePrice~., data=train_df, importance=TRUE, ntree = 1000, mtry=36)
+```
+
+```{r,  eval = FALSE}
+prediction_RF_tuned_log <- predict(RF.SalePrice_tuned, newdata = test_kaggle)
+prediction_RF_tuned <- exp(prediction_RF_tuned_log)
+
+```
+```{r,  eval = FALSE}
+prediction_RF_tuned <- cbind(Id = names(prediction_RF_tuned), SalesPrice = prediction_RF_tuned)
+```
+```{r, eval = False}
+write.table(prediction_RF_tuned, file="prediction_RF_tuned.csv",col.names = c("Id", "SalePrice"), sep =',', row.names = FALSE)
+```
+
+
+```{r, eval = FALSE}
+prediction_RF_tune_log <- predict(bestmtry, newdata = test_kaggle)
+prediction_RF_tune <- exp(prediction_RF_tune_log)
+```
+
+```{r, eval = FALSE}
+prediction_RF_tune <- cbind(Id = names(prediction_RF_tune), SalesPrice = prediction_RF_p3)
+```
+
+```{r, eval = FALSE}
+write.table(prediction_RF_p3, file="prediction_RF_p3.csv",col.names = c("Id", "SalePrice"), sep =',', row.names = FALSE)
+```
+
+
+####GBM ---------------------------------------------------------------------------------------
+
+
+```{r, warning= FALSE}
+library(gbm)
+```
+
+```{r}
+set.seed(1)
+boost.train = gbm(SalePrice ~. , data=train_df,
+                  distribution = "gaussian",
+                  n.trees = 1000, 
+                  shrinkage = 0.05,
+                  interaction.depth = 5, 
+                  bag.fraction = 0.66,
+                  cv.folds = 10, 
+                  verbose = FALSE,
+                  n.cores = 8)
+
+min(boost.train$cv.error)
+
+```
+```{r}
+#attributes(boost.train)
+bestTreeForPrediction = gbm.perf(boost.train)
+```
+
+
+
+```{r}
+prediction_BOOST_log <- predict(boost.train, test_kaggle)
+prediction_BOOST <- exp(prediction_BOOST_log)
+```
+
+```{r,  eval = FALSE}
+prediction_BOOST <- cbind(Id = rownames(X_test), SalesPrice = prediction_BOOST)
+```
+```{r, eval = False}
+write.table(prediction_BOOST, file="prediction_BOOST.csv",col.names = c("Id", "SalePrice"), sep =',', row.names = FALSE)
+```
+
 
 ######xgboost-----------------------------------------------------------------------------------------------
 
+```{r,  eval = FALSE}
+#setup
+library(parallel)
+detectCores() #=> 8
+dtrain <- xgb.DMatrix(X_train, label = y_train)
+```
 
+
+###XGBoost - CV-------------------------------------------------
+#####https://stackoverflow.com/questions/35050846/xgboost-in-r-how-does-xgb-cv-pass-the-optimal-parameters-into-xgb-train
+```{r, eval = FALSE}
+best_param2 = list()
+best_rmse = Inf
+best_rmse_index = 0
+best_seednumber = 1234
+
+for (iter in 1:20) {
+    param <- list(objective = "reg:linear",
+          max_depth = sample(1:10, 1),
+          eta = runif(1, .01, .05),
+          gamma = runif(1, 0.0, 0.013), 
+          subsample = runif(1, .7, .8),
+          colsample_bytree = runif(1, .6, .7), 
+          min_child_weight = sample(1:10, 1)
+          )
+    cv.nround = 1000
+    cv.nfold = 10
+    seed.number = sample.int(10000, 1)[[1]]
+    set.seed(seed.number)
+    mdcv <- xgb.cv(data=dtrain, params = param, nthread=8, 
+                    nfold=cv.nfold, nrounds=cv.nround,
+                    verbose = F, early.stop.rounds=8, maximize=FALSE)
+
+    min_rmse = min(mdcv$evaluation_log[,test_rmse_mean])
+    min_rmse_index = which.min(mdcv$evaluation_log[,test_rmse_mean])
+    
+
+    if (min_rmse < best_rmse) {
+        best_rmse = min_rmse
+        best_rmse_index = min_rmse_index
+        best_seednumber = seed.number
+        best_param2 = param
+    }
+    print(iter)
+}
+```
 
 ```{r}
-#eta = 0.3 by default
-#gamma = 0 by default,
-#max_depth [default=6]
+print(best_param2) # rmse = 0.12434
+#print(best_param) #rmse.cv.error = 0.12567
+```
+```{r}
+nround = best_rmse_index
+set.seed(best_seednumber)
+model_XGB_tune2 <- xgb.train(data=dtrain, params=best_param2, nrounds=nround, nthread=8)
+```
 
+```{r,  eval = FALSE}
+prediction_XGB_tune2_log <- predict(model_XGB_tune2, X_test)
+prediction_XGB_tune2 <- exp(prediction_XGB_tune2_log)
+```
+
+
+```{r,  eval = FALSE}
+prediction_XGB_tune2 <- cbind(Id = rownames(X_test), SalesPrice = prediction_XGB_tune2)
+```
+
+```{r,  eval = FALSE}
+write.table(prediction_XGB_tune2, file="prediction_XBG_tune2.csv",col.names = c("Id", "SalePrice"), sep =',', row.names = FALSE)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r, eval = FALSE}
+###CODE TEST
+set.seed(7862)
 params <- list("objective" = "reg:linear",
-              "nthread" = 8,
-              "eta" = 0.25,
-              "subsample"=0.8,
-              "gamma" = 0.1,
               "max_depth"= 6,
-              "colsample_bytree" = 1)
+              "eta" = 0.02,
+              "subsample"=0.8,
+              "colsample_bytree" = 0.8,
+              "min_child_weight" = 1,
+              "gamma" = 0
+              )
 
-model_xg <- xgboost(param=params, data = x, label = y, nrounds=150)
 
+cv.nround = 1000
+cv.nfold = 5
+
+history <- xgb.cv(data = dtrain, params = best_param1, nthread = 8, nfold = cv.nfold , early.stop.round=8, nrounds = cv.nround, maximize=FALSE)
+
+
+print(history)
 ```
-
-```{r}
-prediction_XBG <- predict(model_xg, test_kaggle1)
-```
-
-
-```{r}
-prediction_XBG <- cbind(Id = rownames(prediction_bag), SalesPrice = prediction_XBG)
-```
-
-```{r, eval = False}
-write.table(prediction_XBG, file="prediction_XBG.csv",col.names = c("Id", "SalePrice"), sep =',', row.names = FALSE)
-```
-
-
-
-
-
-
-
-
-```{r}
-train_Data <- xgb.DMatrix(data = x, label = y)
-
-cv.ctrl <- trainControl(method = "repeatedcv", repeats = 1,number = 3)
-
-xgb.grid <- expand.grid(nrounds = 500,
-                        max_depth = c(6,10),
-                        eta = c(0.01,0.3, 1),
-                        gamma = c(0.0, 0.2, 1),
-                        colsample_bytree = c(0.5,0.8, 1),
-                        min_child_weight=c(1,3),
-                        subsample =c(0.8)
-)
-
-xgb_tune <-train(x,y,
-                 method="xgbTree",
-                 metric = "RMSE",
-                 trControl=cv.ctrl,
-                 tuneGrid=xgb.grid, nthreads = 8
-)
-```
-
-
-
-
-```{r}
-# set up the cross-validated hyper-parameter search
-xgb_grid_1 = expand.grid(nrounds = 500,
-                        max_depth = seq(6,10),
-                        eta = c(0.01,0.3, 1),
-                        gamma = c(0.0, 0.2, 1),
-                        colsample_bytree = c(0.5,0.8, 1),
-                        min_child_weight=seq(1,10),
-                        nthread = 8
-                        )
- 
-# pack the training control parameters
-xgb_trcontrol_1 = trainControl(method = "cv",number = 5)
- 
-# train the model for each parameter combination in the grid,
-#   using CV to evaluate
-xgb_train_1 = train(x, y, trControl = xgb_trcontrol_1, tuneGrid = xgb_grid_1, method = "xgbTree",metric = "RMSE")
-
- 
-
-```
-```{r}
-# scatter plot of the AUC against max_depth and eta
-ggplot(xgb_train_1$results, aes(x = as.factor(eta), y = max_depth, size = ROC, color = ROC)) +
-geom_point() +
-theme_bw() +
-scale_size_continuous(guide = "none")
-```
-
 
