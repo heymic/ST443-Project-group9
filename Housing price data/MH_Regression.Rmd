@@ -16,53 +16,27 @@ library(caret) # for tuning xgboost
 
 ```
 
-```{r, eval = FALSE}
-str(df)
-```
 
-```{r, eval=FALSE}
-for(i in colnames(df[,sapply(df, is.character)])){
-    df[,i] <- as.factor(df[,i])
-}
 
-```
-
-```{r}
-train_df <- df[df$isTrain==1,]
-test_kaggle <- df[df$isTrain==0,]
-
-train_df$isTrain <- NULL
-test_kaggle$isTrain <- NULL
-test_kaggle$SalePrice <- NULL
-```
-
-```{r}
+```{r Generating matrix from the data frames, no intercept}
 X_train<- model.matrix(SalePrice~.-1, data = train_df)
 y_train <- train_df$SalePrice
-X_test <- model.matrix(~.-1, data=test_kaggle)
+X_test <- model.matrix(~.-1, data=test_df)
 ```
 
 
-```{r,  eval = FALSE, include= FALSE}
-for(i in colnames(train_df[,sapply(train_df, is.character)])){
-    train_df[,i] <- as.factor(train_df[,i])
-}
-```
-
-```{r,  eval = FALSE, include= FALSE}
-for(i in colnames(test_kaggle[,sapply(test_kaggle, is.character)])){
-    test_kaggle[,i] <- as.factor(test_kaggle[,i])
-}
-```
 
 ```{r}
 #Check is some there are more levels in some of the categorical factors in the testing compared to the training
 for(i in colnames(train_df[,sapply(train_df, is.factor)])){
-  if (length(levels(train_df[,i])) < length(levels(test_kaggle[,i]))) {
+  if (length(levels(train_df[,i])) < length(levels(test_df[,i]))) {
     print(i)
+    print(levels(train_df[,i]))
+    print(levels(test_df[,i]))
   }
 }
 
+#150 is appears in the testing data, but doesn't appear in the training data
 ```
 
 
@@ -70,13 +44,22 @@ for(i in colnames(train_df[,sapply(train_df, is.factor)])){
 
 #regression with all the parameters - just as a benchmark
 
+```{r}
+df[df$MSSubClass == 150,] 
+df[df$MSSubClass == 150,"MSSubClass"] <- 120
+```
+
+
+
+
+
 ```{r, eval = FALSE}
 lm_fit_all = lm(SalePrice ~., data = train_df) 
 #summary(lm_fit_all)
 ```
 
 ```{r, warning=FALSE, message=FALSE,  eval = FALSE}
-prediction_LR_ALL <- predict(lm_fit_all, test_kaggle, type="response")
+prediction_LR_ALL <- predict(lm_fit_all, test_df, type="response")
 ```
 
 ```{r,  eval = FALSE}
@@ -141,7 +124,7 @@ text(prune.SalePrice, pretty=1)
 cv.SalePrice$dev # no PRUNING DONE
 ```
 ```{r,  eval = FALSE}
-prediction_TREE <- predict(prune.SalePrice ,test_kaggle)
+prediction_TREE <- predict(prune.SalePrice ,test_df)
 ```
 ```{r,  eval = FALSE}
 prediction_TREE <- cbind(Id = rownames(prediction_TREE), SalesPrice = prediction_TREE)
@@ -168,7 +151,7 @@ bag.SalePrice
 ```
 
 ```{r,  eval = FALSE}
-prediction_bag <- predict(bag.SalePrice, newdata = test_kaggle)
+prediction_bag <- predict(bag.SalePrice, newdata = test_df)
 ```
 
 ```{r,  eval = FALSE}
@@ -187,7 +170,7 @@ RF_p3.SalePrice <-randomForest(SalePrice~., data=train_df, mtry = 26, importance
 ```
 
 ```{r, eval = FALSE}
-prediction_RF_p3_log <- predict(RF_p3.SalePrice, newdata = test_kaggle)
+prediction_RF_p3_log <- predict(RF_p3.SalePrice, newdata = test_df)
 prediction_RF_p3 <- exp(prediction_RF_p3_log)
 ```
 
@@ -207,7 +190,7 @@ RF.SalePrice <-randomForest(SalePrice~., data=train_df, importance=TRUE)
 ```
 
 ```{r,  eval = FALSE}
-prediction_RF <- predict(RF.SalePrice, newdata = test_kaggle)
+prediction_RF <- predict(RF.SalePrice, newdata = test_df)
 ```
 ```{r,  eval = FALSE}
 prediction_RF <- cbind(Id = rownames(prediction_RF), SalesPrice = prediction_RF)
@@ -238,7 +221,7 @@ RF.SalePrice_tuned <-randomForest(SalePrice~., data=train_df, importance=TRUE, n
 ```
 
 ```{r,  eval = FALSE}
-prediction_RF_tuned_log <- predict(RF.SalePrice_tuned, newdata = test_kaggle)
+prediction_RF_tuned_log <- predict(RF.SalePrice_tuned, newdata = test_df)
 prediction_RF_tuned <- exp(prediction_RF_tuned_log)
 
 ```
@@ -251,7 +234,7 @@ write.table(prediction_RF_tuned, file="prediction_RF_tuned.csv",col.names = c("I
 
 
 ```{r, eval = FALSE}
-prediction_RF_tune_log <- predict(bestmtry, newdata = test_kaggle)
+prediction_RF_tune_log <- predict(bestmtry, newdata = test_df)
 prediction_RF_tune <- exp(prediction_RF_tune_log)
 ```
 
@@ -294,7 +277,7 @@ bestTreeForPrediction = gbm.perf(boost.train)
 
 
 ```{r}
-prediction_BOOST_log <- predict(boost.train, test_kaggle)
+prediction_BOOST_log <- predict(boost.train, test_df)
 prediction_BOOST <- exp(prediction_BOOST_log)
 ```
 

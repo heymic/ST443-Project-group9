@@ -31,21 +31,19 @@ setwd("C:/Users/Michal/Documents/01- Master Degree/GitHub/ST443-Project-group9/H
 getwd()
 ```
 ```{r}
-train = read.csv("train.csv", row.names = "Id", stringsAsFactors=FALSE)
-testing_kaggle = read.csv("test.csv", row.names = "Id", stringsAsFactors=FALSE)
+train_raw = read.csv("train.csv", row.names = "Id", stringsAsFactors=FALSE)
+testing_raw = read.csv("test.csv", row.names = "Id", stringsAsFactors=FALSE)
 ```
 
 ```{r}
 #combining train and test data for quicker data prep
-testing_kaggle$SalePrice <- NA
-train$isTrain <- 1
-testing_kaggle$isTrain <- 0
-df <- rbind(train,testing_kaggle)
+testing_raw$SalePrice <- NA
+train_raw$isTrain <- 1
+testing_raw$isTrain <- 0
+df <- rbind(train_raw,testing_raw)
 ```
 
-```{r}
-hist(df$SalePrice)
-```
+
 
 ```{r}
 colSums(sapply(df, is.na))
@@ -166,35 +164,88 @@ sum(is.na(df)) == 1459
 #### THE DATA IMPUTING IS DONE BY NOW. END------------------------------------------------------------------
 ####-------------------------------------------------------------------------------------------------
 
-```{r}
-for(i in colnames(df[,sapply(df, is.character)])){
-    df[,i] <- as.factor(df[,i])
-}
-```
 
+
+#Creating categorical variables and some transformations!
 
 ```{r}
-df$MSSubClass <- as.factor(df$MSSubClass)
-df$OverallQual <- as.factor(df$OverallQual)
-df$OverallCond <- as.factor(df$OverallCond)
-
-
-#df$GarageYrBlt <- as.factor(df$GarageYrBlt) # treat as factor as some of them are '0'
-
-
-#add years as dummies - POSSIBILITY - but a problem appears, the algorithms cannot treat categorical varibles with more than 55levels
-#df$YearBuilt <- as.factor(df$YearBuilt)
-#df$YearRemodAdd <- as.factor(df$YearRemodAdd)
-#df$YrSold <- as.factor(df$YrSold)
+hist(df$SalePrice)
 ```
+
 
 ```{r}
 df$SalePrice <- log(df$SalePrice)
 ```
 
 
+```{r Splitting the data}
+train_df <- df[df$isTrain==1,]
+test_df <- df[df$isTrain==0,]
+
+train_df$isTrain <- NULL
+test_df$isTrain <- NULL
+test_df$SalePrice <- NULL
+```
+
+
 ```{r}
-str(df)
+train_df$MSSubClass <- as.factor(train_df$MSSubClass)
+test_df$MSSubClass <- as.factor(test_df$MSSubClass)
+
+train_df$OverallQual <- as.factor(train_df$OverallQual)
+test_df$OverallQual <- as.factor(test_df$OverallQual)
+
+train_df$OverallCond <- as.factor(train_df$OverallCond)
+test_df$OverallCond <- as.factor(test_df$OverallCond)
+```
+
+```{r}
+for(i in colnames(train_df[,sapply(train_df, is.character)])){
+    train_df[,i] <- as.factor(train_df[,i])
+}
+for(i in colnames(test_df[,sapply(test_df, is.character)])){
+    test_df[,i] <- as.factor(test_df[,i])
+}
+```
+
+
+```{r}
+#Check is some there are more levels in some of the categorical factors in the testing compared to the training
+for(i in colnames(train_df[,sapply(train_df, is.factor)])){
+  if (length(levels(train_df[,i])) < length(levels(test_df[,i]))) {
+    print(i)
+    print(levels(train_df[,i]))
+    print(levels(test_df[,i]))
+  }
+}
+
+#150 is appears in the testing data, but doesn't appear in the training data
+```
+
+```{r}
+test_df[test_df$MSSubClass == 150,] 
+test_df[test_df$MSSubClass == 150,"MSSubClass"] <- 120
+test_df$MSSubClass <- as.factor(as.numeric(test_df$MSSubClass))
+
+```
+
+
+```{r, eval= FALSE}
+for(i in colnames(df[,sapply(df, is.character)])){
+    df[,i] <- as.factor(df[,i])
+}
+#df$GarageYrBlt <- as.factor(df$GarageYrBlt) # treat as factor as some of them are '0'
+#add years as dummies - POSSIBILITY - but a problem appears, the algorithms cannot treat categorical varibles with more than 55levels
+#df$YearBuilt <- as.factor(df$YearBuilt)
+#df$YearRemodAdd <- as.factor(df$YearRemodAdd)
+#df$YrSold <- as.factor(df$YrSold)
+```
+
+
+
+
+```{r}
+str(train_df)
 ```
 
 
