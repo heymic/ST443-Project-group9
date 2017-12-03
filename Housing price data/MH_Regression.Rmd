@@ -35,13 +35,13 @@ lm_fit_all = lm(SalePrice ~., data = train_df)
 #summary(lm_fit_all)
 ```
 
-```{r, warning=FALSE, message=FALSE,  eval = FALSE}
-prediction_LR_ALL <- predict(lm_fit_all, test_df, type="response")
+```{r,   eval = FALSE}
+prediction_LR_ALL_log <- predict(lm_fit_all, test_df, type="response")
+prediction_LR_ALL <- exp(prediction_LR_ALL_log)
 ```
 
 ```{r,  eval = FALSE}
-prediction_LR_ALL <- as.data.frame(prediction_LR_ALL)
-prediction_LR_ALL <- cbind(Id = rownames(prediction_LR_ALL), SalesPrice = prediction_LR_ALL)
+prediction_LR_ALL <- cbind(Id = rownames(test_df), SalesPrice = prediction_LR_ALL)
 ```
 
 ```{r,  eval = FALSE}
@@ -72,8 +72,8 @@ prediction_LASSO_1se <- exp(prediction_LASSO_1se_log)
 ```
 
 ```{r, eval = FALSE}
-prediction_LASSO_min <-cbind(Id = rownames(prediction_LASSO_min), SalesPrice = prediction_LASSO_min)
-prediction_LASSO_1se <- cbind(Id = rownames(prediction_LASSO_1se), SalesPrice = prediction_LASSO_1se)
+prediction_LASSO_min <-cbind(Id = rownames(test_df), SalesPrice = prediction_LASSO_min)
+prediction_LASSO_1se <- cbind(Id = rownames(test_df), SalesPrice = prediction_LASSO_1se)
 ```
 
 ```{r, eval = False}
@@ -85,32 +85,33 @@ write.table(prediction_LASSO_1se, file="prediction_LASSO_1se.csv",col.names = c(
 
 ```{r,  eval = FALSE}
 ## Regression Tree
-tree.SalePrice <-tree(SalePrice~., data =train_df)
+tree.SalePrice <-tree(SalePrice~., data = train_df)
 summary(tree.SalePrice)
 plot(tree.SalePrice)
 text(tree.SalePrice, pretty=1)
 ```
+
 ```{r,  eval = FALSE}
 cv.SalePrice <-cv.tree(tree.SalePrice, K = 10)
 plot(cv.SalePrice$size, cv.SalePrice$dev, type="b")
 ## In this case, the most complex tree is selected by cross-validation
 ## However, if we wish to prune the tree, we could do so as follows using prune.tree() function
-prune.SalePrice <-prune.tree(tree.SalePrice, best=11)
+prune.SalePrice <-prune.tree(tree.SalePrice, best=10)
 plot(prune.SalePrice)
 text(prune.SalePrice, pretty=1)
 cv.SalePrice$dev # no PRUNING DONE
 ```
+
 ```{r,  eval = FALSE}
-prediction_TREE <- predict(prune.SalePrice ,test_df)
+prediction_TREE_log <- predict(prune.SalePrice ,test_df)
+prediction_TREE <- exp(prediction_TREE_log)
 ```
 ```{r,  eval = FALSE}
-prediction_TREE <- cbind(Id = rownames(prediction_TREE), SalesPrice = prediction_TREE)
+prediction_TREE <- cbind(Id = rownames(X_test), SalesPrice = prediction_TREE)
 ```
 ```{r, eval = FALSE}
 write.table(prediction_TREE, file="prediction_TREE.csv",col.names = c("Id", "SalePrice"), sep =',', row.names = FALSE)
 ```
-
-
 
 
 
@@ -128,12 +129,12 @@ bag.SalePrice
 ```
 
 ```{r,  eval = FALSE}
-prediction_bag <- predict(bag.SalePrice, newdata = test_df)
+prediction_bag_log <- predict(bag.SalePrice, newdata = test_df)
+prediction_bag <- exp(prediction_bag_log)
 ```
 
 ```{r,  eval = FALSE}
-prediction_bag <- cbind(Id = rownames(prediction_bag), SalesPrice = prediction_bag)
-prediction_bag <- cbind(Id = rownames(prediction_bag), SalesPrice = prediction_bag)
+prediction_bag <- cbind(Id = rownames(X_test), SalesPrice = prediction_bag)
 ```
 ```{r,  eval = FALSE}
 write.table(prediction_bag, file="prediction_bag.csv",col.names = c("Id", "SalePrice"), sep =',', row.names = FALSE)
@@ -152,7 +153,7 @@ prediction_RF_p3 <- exp(prediction_RF_p3_log)
 ```
 
 ```{r, eval = FALSE}
-prediction_RF_p3 <- cbind(Id = names(prediction_RF_p3), SalesPrice = prediction_RF_p3)
+prediction_RF_p3 <- cbind(Id = rownames(X_test), SalesPrice = prediction_RF_p3)
 ```
 
 ```{r, eval = FALSE}
@@ -167,11 +168,11 @@ RF.SalePrice <-randomForest(SalePrice~., data=train_df, importance=TRUE)
 ```
 
 ```{r,  eval = FALSE}
-prediction_RF <- predict(RF.SalePrice, newdata = test_df)
+prediction_RF_log <- predict(RF.SalePrice, newdata = test_df)
+prediction_RF <- exp(prediction_RF_log)
 ```
 ```{r,  eval = FALSE}
-prediction_RF <- cbind(Id = rownames(prediction_RF), SalesPrice = prediction_RF)
-prediction_RF <- cbind(Id = rownames(prediction_RF), SalesPrice = prediction_RF)
+prediction_RF <- cbind(Id = rownames(X_test), SalesPrice = prediction_RF)
 ```
 ```{r, eval = False}
 write.table(prediction_RF, file="prediction_RF.csv",col.names = c("Id", "SalePrice"), sep =',', row.names = FALSE)
@@ -190,11 +191,15 @@ x_train_df$SalePrice <- NULL
 ```{r,  eval = FALSE}
 results <- rfcv(x_train_df, y_train, cv.fold=10, scale="log", step=0.7)
 ```
+```{r}
+results$error.cv
+
+```
 
 
 ```{r,  eval = FALSE}
 ## We could change the number of trees grown by randomForest() using ntree argument
-RF.SalePrice_tuned <-randomForest(SalePrice~., data=train_df, importance=TRUE, ntree = 1000, mtry=36)
+RF.SalePrice_tuned <-randomForest(SalePrice~., data=train_df, importance=TRUE, ntree = 1000, mtry=55)
 ```
 
 ```{r,  eval = FALSE}
@@ -203,31 +208,20 @@ prediction_RF_tuned <- exp(prediction_RF_tuned_log)
 
 ```
 ```{r,  eval = FALSE}
-prediction_RF_tuned <- cbind(Id = names(prediction_RF_tuned), SalesPrice = prediction_RF_tuned)
+prediction_RF_tuned <- cbind(Id = rownames(X_test), SalesPrice = prediction_RF_tuned)
 ```
 ```{r, eval = False}
 write.table(prediction_RF_tuned, file="prediction_RF_tuned.csv",col.names = c("Id", "SalePrice"), sep =',', row.names = FALSE)
 ```
 
 
-```{r, eval = FALSE}
-prediction_RF_tune_log <- predict(bestmtry, newdata = test_df)
-prediction_RF_tune <- exp(prediction_RF_tune_log)
-```
 
-```{r, eval = FALSE}
-prediction_RF_tune <- cbind(Id = names(prediction_RF_tune), SalesPrice = prediction_RF_p3)
-```
-
-```{r, eval = FALSE}
-write.table(prediction_RF_p3, file="prediction_RF_p3.csv",col.names = c("Id", "SalePrice"), sep =',', row.names = FALSE)
-```
 
 
 ####GBM ---------------------------------------------------------------------------------------
 
 
-```{r, warning= FALSE}
+```{r, warning= FALSE, message = FALSE}
 library(gbm)
 ```
 
@@ -286,12 +280,12 @@ best_seednumber = 1234
 
 for (iter in 1:20) {
     param <- list(objective = "reg:linear",
-          max_depth = sample(1:10, 1),
+          max_depth = sample(2:6, 1),
           eta = runif(1, .01, .05),
           gamma = runif(1, 0.0, 0.013), 
           subsample = runif(1, .7, .8),
           colsample_bytree = runif(1, .6, .7), 
-          min_child_weight = sample(1:10, 1)
+          min_child_weight = sample(1:3, 1)
           )
     cv.nround = 1000
     cv.nfold = 10
@@ -316,10 +310,10 @@ for (iter in 1:20) {
 ```
 
 ```{r}
-print(best_param2) # rmse = 0.12434
+print(best_param2) # rmse = 0.12608
 #print(best_param) #rmse.cv.error = 0.12567
 ```
-```{r}
+```{r, eval = FALSE}
 nround = best_rmse_index
 set.seed(best_seednumber)
 model_XGB_tune2 <- xgb.train(data=dtrain, params=best_param2, nrounds=nround, nthread=8)
