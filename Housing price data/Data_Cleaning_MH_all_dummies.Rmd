@@ -166,19 +166,9 @@ sum(is.na(df)) == 1459
 
 
 
-#Creating categorical variables and some transformations!
+#Creating categorical variables and checking whether and error appears, if f.e testing has more levels than the training data!
 
-```{r}
-hist(df$SalePrice)
-```
-
-
-```{r}
-df$SalePrice <- log(df$SalePrice)
-```
-
-
-```{r Splitting the data}
+```{r Splitting the data for testing the level factors}
 train_df <- df[df$isTrain==1,]
 test_df <- df[df$isTrain==0,]
 
@@ -209,7 +199,7 @@ for(i in colnames(test_df[,sapply(test_df, is.character)])){
 ```
 
 
-```{r}
+```{r Check 1}
 #Check is some there are more levels in some of the categorical factors in the testing compared to the training
 for(i in colnames(train_df[,sapply(train_df, is.factor)])){
   if (length(levels(train_df[,i])) < length(levels(test_df[,i]))) {
@@ -222,18 +212,43 @@ for(i in colnames(train_df[,sapply(train_df, is.factor)])){
 #150 is appears in the testing data, but doesn't appear in the training data
 ```
 
-```{r}
-test_df[test_df$MSSubClass == 150,] 
-test_df[test_df$MSSubClass == 150,"MSSubClass"] <- 120
-test_df$MSSubClass <- as.factor(as.numeric(test_df$MSSubClass))
+```{r Remove the appearing problem}
+df[df$MSSubClass == 150,] 
+df[df$MSSubClass == 150,"MSSubClass"] <- 120
 
+```
+###finished the part that compares the factor levels in the testing data and the training data
+
+
+
+
+###TRANSFORMATIONS
+```{r}
+hist(df$SalePrice)
 ```
 
 
-```{r, eval= FALSE}
+```{r}
+df$SalePrice <- log(df$SalePrice)
+```
+
+
+
+
+### now is the part that creates the factors in the combined dataframe and split the data into initial testing and training
+
+
+
+```{r}
 for(i in colnames(df[,sapply(df, is.character)])){
     df[,i] <- as.factor(df[,i])
 }
+
+df$MSSubClass <- as.factor(df$MSSubClass)
+df$OverallQual <- as.factor(df$OverallQual)
+df$OverallCond <- as.factor(df$OverallCond)
+
+### THINGS TO CONSIDER:
 #df$GarageYrBlt <- as.factor(df$GarageYrBlt) # treat as factor as some of them are '0'
 #add years as dummies - POSSIBILITY - but a problem appears, the algorithms cannot treat categorical varibles with more than 55levels
 #df$YearBuilt <- as.factor(df$YearBuilt)
@@ -242,10 +257,19 @@ for(i in colnames(df[,sapply(df, is.character)])){
 ```
 
 
+```{r Splitting the data }
+train_df <- df[df$isTrain==1,]
+test_df <- df[df$isTrain==0,]
+
+train_df$isTrain <- NULL
+test_df$isTrain <- NULL
+test_df$SalePrice <- NULL
+```
+
 
 
 ```{r}
-str(train_df)
+str(df)
 ```
 
 
