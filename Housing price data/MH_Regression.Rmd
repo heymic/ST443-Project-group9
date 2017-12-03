@@ -26,32 +26,9 @@ X_test <- model.matrix(~.-1, data=test_df)
 
 
 
-```{r}
-#Check is some there are more levels in some of the categorical factors in the testing compared to the training
-for(i in colnames(train_df[,sapply(train_df, is.factor)])){
-  if (length(levels(train_df[,i])) < length(levels(test_df[,i]))) {
-    print(i)
-    print(levels(train_df[,i]))
-    print(levels(test_df[,i]))
-  }
-}
-
-#150 is appears in the testing data, but doesn't appear in the training data
-```
-
-
 ####REGRESSION------------------------------------------------------------------------------
 
 #regression with all the parameters - just as a benchmark
-
-```{r}
-df[df$MSSubClass == 150,] 
-df[df$MSSubClass == 150,"MSSubClass"] <- 120
-```
-
-
-
-
 
 ```{r, eval = FALSE}
 lm_fit_all = lm(SalePrice ~., data = train_df) 
