@@ -3,26 +3,20 @@ title: "Classifer"
 output: pdf_document
 ---
 
-```{r}
-library(tree)
-```
-
+#Classification
 
 ```{r}
-train_df <- filter(df,df$isTrain==1)
+mean(train_df$SalePrice)
 ```
 
 ```{r}
-median(train_df$SalePrice)
-```
-
-```{r}
-train_df$Classifier <- ifelse(train_df$SalePrice >= 163000,"High","Low")
+train_df$Classifier <- ifelse(train_df$SalePrice <= 12.024,"Low","High")
 train_df$Classifier <- as.factor(train_df$Classifier)
+train_df$Classifier <- factor(train_df$Classifier, levels = c("Low", "High"))
 train_df$isTrain <- NULL
 ```
 
-#Classification Tree
+Splitting of data into training and test set
 
 ```{r}
 attach(train_df)
@@ -30,6 +24,87 @@ training<- sample(1:nrow(train_df), 1460*0.5)
 test.train_df <- train_df[-training,]
 train.train_df <- train_df[training,]
 Classifier.test <- test.train_df$Classifier
+```
+
+#Ridge
+
+```{r}
+library(glmnet)
+x <- model.matrix(Classifier~.-SalePrice, data=train.train_df)
+y <- train.train_df$Classifier
+x.test <- model.matrix(Classifier~.-SalePrice, data=test.train_df)
+```
+
+
+```{r}
+fit.ridge <- glmnet(x,y,alpha=0, family="binomial")
+plot(fit.ridge, xvar='lambda', lanel=TRUE)
+plot(fit.ridge, xvar='dev', lanel=TRUE)
+cv.ridge <- cv.glmnet(x,y,alpha=0,family="binomial")
+plot(cv.ridge)
+```
+
+Ridge-Minimum Lambda
+
+```{r}
+ridge.min.lambda=cv.ridge$lambda.min
+fit.ridge.min <- glmnet(x,y,alpha=0, family="binomial", lambda=ridge.min.lambda)
+prediction_ridge_min_log <- predict(fit.ridge.min, x.test)
+prediction_ridge_min_log_classifier <- (ifelse(prediction_ridge_min_log >0.5,1,0))
+table(prediction_ridge_min_log_classifier, Classifier.test)
+#mean(prediction_ridge_min_log_classifier!=Classifier.test)
+```
+
+Ridge-1se
+
+```{r}
+ridge.1se.lambda=cv.ridge$lambda.1se
+fit.ridge.1se <- glmnet(x,y,alpha=0, family="binomial", lambda=ridge.1se.lambda)
+prediction_ridge_1se_log <- predict(fit.ridge.1se, x.test)
+prediction_ridge_1se_log_classifier <- ifelse(prediction_ridge_1se_log >0.5,1,0)
+table(prediction_ridge_1se_log_classifier, Classifier.test)
+#mean(prediction_ridge_1se_log_classifier!=Classifier.test)
+```
+
+#Lasso
+
+```{r}
+fit.lasso <- glmnet(x,y, family="binomial")
+plot(fit.lasso, xvar='lambda', lanel=TRUE)
+plot(fit.lasso, xvar='dev', lanel=TRUE)
+cv.lasso <- cv.glmnet(x,y ,family="binomial")
+plot(cv.lasso)
+```
+
+Lasso-Minimum Lambda
+
+```{r}
+lasso.min.lambda=cv.lasso$lambda.min
+fit.lasso.min <- glmnet(x,y, family="binomial", lambda=lasso.min.lambda)
+prediction_lasso_min_log <- predict(fit.lasso.min, x.test)
+prediction_lasso_min_log_classifier <- (ifelse(prediction_lasso_min_log >0.5,1,0))
+table(prediction_lasso_min_log_classifier, Classifier.test)
+#mean(prediction_lasso_min_log_classifier!=Classifier.test)
+```
+
+Lasso-1se
+
+```{r}
+lasso.1se.lambda=cv.lasso$lambda.1se
+fit.lasso.1se <- glmnet(x,y,alpha=0, family="binomial", lambda=lasso.1se.lambda)
+prediction_lasso_1se_log <- predict(fit.lasso.1se, x.test)
+prediction_lasso_1se_log_classifier <- ifelse(prediction_lasso_1se_log >0.5,1,0)
+table(prediction_lasso_1se_log_classifier, Classifier.test)
+#mean(prediction_lasso_1se_log_classifier!=Classifier.test)
+```
+
+#Classification Tree
+
+```{r}
+library(tree)
+```
+
+```{r}
 tree.train_df <- tree(Classifier~.-SalePrice, train_df, subset=training)
 ```
 
@@ -60,6 +135,7 @@ prune.train_df <-prune.misclass(tree.train_df, best=9)
 plot(prune.train_df)
 text(prune.train_df, pretty=0)
 ```
+
 Compute the test error rate using the pruned tree 
 
 ```{r}
