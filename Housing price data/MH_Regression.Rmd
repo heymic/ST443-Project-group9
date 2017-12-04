@@ -189,7 +189,7 @@ x_train_df$SalePrice <- NULL
 ```
 
 ```{r,  eval = FALSE}
-results <- rfcv(x_train_df, y_train, cv.fold=10, scale="log", step=0.7)
+results <- rfcv(x_train_df, y_train, cv.fold=10, scale="log", step=0.5)
 ```
 ```{r}
 results$error.cv
@@ -199,7 +199,7 @@ results$error.cv
 
 ```{r,  eval = FALSE}
 ## We could change the number of trees grown by randomForest() using ntree argument
-RF.SalePrice_tuned <-randomForest(SalePrice~., data=train_df, importance=TRUE, ntree = 1000, mtry=55)
+RF.SalePrice_tuned <-randomForest(SalePrice~., data=train_df, importance=TRUE, ntree = 1000, mtry=38)
 ```
 
 ```{r,  eval = FALSE}
@@ -231,7 +231,7 @@ boost.train = gbm(SalePrice ~. , data=train_df,
                   distribution = "gaussian",
                   n.trees = 1000, 
                   shrinkage = 0.05,
-                  interaction.depth = 5, 
+                  interaction.depth = 2, 
                   bag.fraction = 0.66,
                   cv.folds = 10, 
                   verbose = FALSE,
