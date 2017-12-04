@@ -34,7 +34,7 @@ testing_raw$isTrain <- 0
 df <- rbind(train_raw,testing_raw)
 ```
 
-#### Missing Values and imputation.
+### Missing Values and imputation.
 
 ```{r}
 colSums(sapply(df, is.na))
@@ -64,7 +64,7 @@ garage.cols <- c('GarageArea', 'GarageCars', 'GarageQual', 'GarageFinish', 'Gara
 #df[is.na(df$GarageCond),garage.cols]
 ```
 
-Imputing the missing values of Garages. If the no garage  then assigning 0 or None
+Imputing the missing values of Garages. If the no garage then assigning 0 or None
 
 ```{r GarageYrBlt}
 #length(which(df$GarageYrBlt == df$YearBuilt))
@@ -155,7 +155,7 @@ The remaining ones are the SalesPrice in the predicting Dataset that is fine!
 sum(is.na(df)) == 1459
 ```
 
-#### Creating categorical variables and checking whether and some problem appear. if f.e testing has more levels than the training data!
+### Creating categorical variables and checking whether and some problem appear. if f.e testing has more levels than the training data!
 
 ```{r Splitting the data for testing the level factors}
 train_df <- df[df$isTrain==1,]
@@ -202,7 +202,7 @@ level '150' appears once in the testing data and no such level is in the trainin
 df[df$MSSubClass == 150,"MSSubClass"] <- 120
 ```
 
-#### Transformations
+### Transformations
 
 ```{r}
 hist(df$SalePrice)
@@ -215,7 +215,7 @@ df$SalePrice <- log(df$SalePrice)
 hist(df$SalePrice)
 ```
 
-#### Create factors in the combined dataframe and split the data into testing and training.
+### Create factors in the combined dataframe and split the data into testing and training.
 
 ```{r}
 for(i in colnames(df[,sapply(df, is.character)])){

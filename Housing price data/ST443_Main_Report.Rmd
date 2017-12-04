@@ -7,23 +7,22 @@ output: pdf_document
 
 
 
-## Data Cleaning and Transformation
+# Data Cleaning and Transformation
 
 ```{r, child = 'ST443_Data_Cleaning.Rmd'}
 ```
 
----
----
 
-## Regression Code
+\pagebreak
+
+# Regression Code
 
 ```{r, child = 'ST443_Regression.Rmd'}
 ```
 
----
----
+\pagebreak
 
-## Classification Code
+# Classification Code
 
 ```{r, child = 'ST443_Classification.Rmd'}
 ```

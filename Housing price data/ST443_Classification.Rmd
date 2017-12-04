@@ -28,7 +28,7 @@ train.train_df <- train_df[training,]
 Classifier.test <- test.train_df$Classifier
 ```
 
-#### Ridge
+### Ridge
 
 ```{r, warning=FALSE, message=FALSE}
 x.train.classifier <- model.matrix(Classifier~.-SalePrice, data=train.train_df)
@@ -64,7 +64,7 @@ prediction.ridge.1se.log.classifier <- ifelse(prediction.ridge.1se.log >0.5,1,0)
 table(prediction.ridge.1se.log.classifier, Classifier.test)
 ```
 
-#### Lasso
+### Lasso
 
 ```{r, warning=FALSE, message=FALSE}
 fit.lasso <- glmnet(x.train.classifier,y.train.classifier, family="binomial")
@@ -94,7 +94,7 @@ prediction.lasso.1se.log.classifier <- ifelse(prediction.lasso.1se.log >0.5,1,0)
 table(prediction.lasso.1se.log.classifier, Classifier.test)
 ```
 
-#### Classification Tree
+### Classification Tree
 
 ```{r}
 tree.train_df <- tree(Classifier~.-SalePrice, train.train_df)
@@ -134,7 +134,7 @@ table(tree.pred,Classifier.test)
 mean(tree.pred!=Classifier.test)
 ```
 
-#### Random Forest
+### Random Forest
 
 Bagging: m=p
 
@@ -166,7 +166,7 @@ table(predict=rf.classifier, truth=Classifier.test)
 mean(rf.classifier!=Classifier.test)
 ```
 
-#### Support Vector Machine
+### Support Vector Machine
 
 Basic SVM Model
 
@@ -194,7 +194,7 @@ table(predict=svm_pred, truth=Classifier.test)
 mean(svm_pred!=Classifier.test)
 ```
 
-#### Boosting
+### Boosting
 
 ```{r, eval = FALSE}
 train.train_df$Classifier2 <- ifelse(train.train_df$Classifier=="High",1,0)

@@ -22,7 +22,7 @@ y_train <- train_df$SalePrice
 X_test <- model.matrix(~.-1, data=test_df)
 ```
 
-#### Linear Regression
+### Linear Regression
 
 regression with all the parameters - just as a benchmark
 
@@ -45,7 +45,7 @@ write.table(prediction_LR_ALL, file="prediction_LR_ALL.csv",col.names = c("Id","
 ```
 
 
-#### LASSO 
+### LASSO 
 
 ```{r}
 cv.lasso <-cv.glmnet(X_train, y_train, nfolds = 10, alpha = 1)
@@ -77,7 +77,7 @@ write.table(prediction_LASSO_min, file="prediction_LASSO_min.csv",col.names = c(
 write.table(prediction_LASSO_1se, file="prediction_LASSO_1se.csv",col.names = c("Id", "SalePrice"), sep =',', row.names = FALSE)
 ```
 
-#### REGRESSION TREE
+### REGRESSION TREE
 
 ```{r}
 tree.SalePrice <-tree(SalePrice~., data = train_df)
@@ -110,7 +110,7 @@ prediction_TREE <- cbind(Id = rownames(X_test), SalesPrice = prediction_TREE)
 write.table(prediction_TREE, file="prediction_TREE.csv",col.names = c("Id", "SalePrice"), sep =',', row.names = FALSE)
 ```
 
-#### Bagging
+### Bagging
 
 ```{r,  eval = FALSE}
 ##Bagging
@@ -134,7 +134,7 @@ prediction_bag <- cbind(Id = rownames(X_test), SalesPrice = prediction_bag)
 write.table(prediction_bag, file="prediction_bag.csv",col.names = c("Id", "SalePrice"), sep =',', row.names = FALSE)
 ```
 
-#### Random Forest m = p/3
+### Random Forest $m = p/3$
 
 ```{r, eval = FALSE}
 ## We could change the number of trees grown by randomForest() using ntree argument
@@ -154,7 +154,7 @@ prediction_RF_p3 <- cbind(Id = rownames(X_test), SalesPrice = prediction_RF_p3)
 write.table(prediction_RF_p3, file="prediction_RF_p3.csv",col.names = c("Id", "SalePrice"), sep =',', row.names = FALSE)
 ```
 
-#### Random Forest m = sqrt(p)
+### Random Forest m = $sqrt(p)$
 
 ```{r,  eval = FALSE}
 ## We could change the number of trees grown by randomForest() using ntree argument
@@ -174,7 +174,7 @@ prediction_RF <- cbind(Id = rownames(X_test), SalesPrice = prediction_RF)
 write.table(prediction_RF, file="prediction_RF.csv",col.names = c("Id", "SalePrice"), sep =',', row.names = FALSE)
 ```
 
-#### Tuning Random Forest - selecting 'm'
+### Tuning Random Forest - selecting 'm'
 
 ```{r,  eval = FALSE}
 x_train_df <- train_df
@@ -206,7 +206,7 @@ prediction_RF_tuned <- cbind(Id = rownames(X_test), SalesPrice = prediction_RF_t
 write.table(prediction_RF_tuned, file="prediction_RF_tuned.csv",col.names = c("Id", "SalePrice"), sep =',', row.names = FALSE)
 ```
 
-#### Gradient Boosting Model - library (gbm)
+### Gradient Boosting Model - library (gbm)
 
 ```{r, warning= FALSE, message = FALSE}
 library(gbm)
@@ -244,7 +244,7 @@ prediction_BOOST <- cbind(Id = rownames(X_test), SalesPrice = prediction_BOOST)
 write.table(prediction_BOOST, file="prediction_BOOST.csv",col.names = c("Id", "SalePrice"), sep =',', row.names = FALSE)
 ```
 
-#### XGBoost
+### XGBoost
 
 ```{r,  eval = FALSE}
 #setup
@@ -253,9 +253,9 @@ detectCores() #=> 8
 dtrain <- xgb.DMatrix(X_train, label = y_train)
 ```
 
-Cross Validation in XGBoost - CV
-Source:
-https://stackoverflow.com/questions/35050846/xgboost-in-r-how-does-xgb-cv-pass-the-optimal-parameters-into-xgb-train
+Cross Validation in XGBoost - CV  
+Source:  
+[link](https://stackoverflow.com/questions/35050846/xgboost-in-r-how-does-xgb-cv-pass-the-optimal-parameters-into-xgb-train)
 ```{r, eval = FALSE}
 best_param2 = list()
 best_rmse = Inf
