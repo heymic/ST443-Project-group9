@@ -1,0 +1,212 @@
+---
+title: "LSE ST443, Part 1 Classification"
+author: "GROUP 9"
+date: "Michealmas Term 2017"
+output: pdf_document
+---
+
+```{r, eval = FALSE}
+mean(train_df$SalePrice)
+```
+
+Coverting SalePrice into a binary variable
+
+```{r}
+train_df$Classifier <- ifelse(train_df$SalePrice <= 12.024,"Low","High")
+train_df$Classifier <- as.factor(train_df$Classifier)
+train_df$Classifier <- factor(train_df$Classifier, levels = c("Low", "High"))
+```
+
+Splitting of data into training and test set
+
+```{r, warning=FALSE, message=FALSE}
+attach(train_df)
+set.seed(1)
+training<- sample(1:nrow(train_df), 1460*0.5)
+test.train_df <- train_df[-training,]
+train.train_df <- train_df[training,]
+Classifier.test <- test.train_df$Classifier
+```
+
+#### Ridge
+
+```{r, warning=FALSE, message=FALSE}
+x.train.classifier <- model.matrix(Classifier~.-SalePrice, data=train.train_df)
+y.train.classifier <- train.train_df$Classifier
+x.test.classifier <- model.matrix(Classifier~.-SalePrice, data=test.train_df)
+```
+
+```{r, warning=FALSE, message=FALSE}
+fit.ridge <- glmnet(x.train.classifier,y.train.classifier,alpha=0, family="binomial")
+plot(fit.ridge, xvar='lambda', label=TRUE)
+plot(fit.ridge, xvar='dev', label=TRUE)
+cv.ridge <- cv.glmnet(x.train.classifier,y.train.classifier,alpha=0,family="binomial")
+plot(cv.ridge)
+```
+
+Ridge-Minimum Lambda
+
+```{r, warning=FALSE, message=FALSE}
+ridge.min.lambda=cv.ridge$lambda.min
+fit.ridge.min <- glmnet(x.train.classifier,y.train.classifier,alpha=0, family="binomial", lambda=ridge.min.lambda)
+prediction.ridge.min.log <- predict(fit.ridge.min, x.test.classifier)
+prediction.ridge.min.log.classifier <- (ifelse(prediction.ridge.min.log >0.5,1,0))
+table(prediction.ridge.min.log.classifier, Classifier.test)
+```
+
+Ridge-1se
+
+```{r}
+ridge.1se.lambda=cv.ridge$lambda.1se
+fit.ridge.1se <- glmnet(x.train.classifier,y.train.classifier,alpha=0, family="binomial", lambda=ridge.1se.lambda)
+prediction.ridge.1se.log <- predict(fit.ridge.1se, x.test.classifier)
+prediction.ridge.1se.log.classifier <- ifelse(prediction.ridge.1se.log >0.5,1,0)
+table(prediction.ridge.1se.log.classifier, Classifier.test)
+```
+
+#### Lasso
+
+```{r, warning=FALSE, message=FALSE}
+fit.lasso <- glmnet(x.train.classifier,y.train.classifier, family="binomial")
+plot(fit.lasso, xvar='lambda', lanel=TRUE)
+plot(fit.lasso, xvar='dev', lanel=TRUE)
+cv.lasso <- cv.glmnet(x.train.classifier,y.train.classifier ,family="binomial")
+plot(cv.lasso)
+``` 
+
+Lasso-Minimum Lambda
+
+```{r}
+lasso.min.lambda=cv.lasso$lambda.min
+fit.lasso.min <- glmnet(x.train.classifier,y.train.classifier, family="binomial", lambda=lasso.min.lambda)
+prediction.lasso.min.log <- predict(fit.lasso.min, x.test.classifier)
+prediction.lasso.min.log.classifier <- (ifelse(prediction.lasso.min.log >0.5,1,0))
+table(prediction.lasso.min.log.classifier, Classifier.test)
+```
+
+Lasso-1se
+
+```{r}
+lasso.1se.lambda=cv.lasso$lambda.1se
+fit.lasso.1se <- glmnet(x.train.classifier,y.train.classifier,alpha=0, family="binomial", lambda=lasso.1se.lambda)
+prediction.lasso.1se.log <- predict(fit.lasso.1se, x.test.classifier)
+prediction.lasso.1se.log.classifier <- ifelse(prediction.lasso.1se.log >0.5,1,0)
+table(prediction.lasso.1se.log.classifier, Classifier.test)
+```
+
+#### Classification Tree
+
+```{r}
+tree.train_df <- tree(Classifier~.-SalePrice, train.train_df)
+```
+
+```{r}
+tree.pred <- predict(tree.train_df, test.train_df, type="class")
+length(tree.pred)
+length(Classifier.test)
+table(tree.pred, Classifier.test)
+mean(tree.pred!=Classifier.test)
+```
+
+Prune the tree
+
+```{r}
+cv.train_df <- cv.tree(tree.train_df, FUN= prune.misclass)
+par(mfrow=c(1,2))
+plot(cv.train_df$size, cv.train_df$dev, type="b")
+plot(cv.train_df$k, cv.train_df$dev, type="b")
+```
+
+The optimal number of terminal node is 9
+
+```{r}
+par(mfrow=c(1,1))
+prune.train_df <-prune.misclass(tree.train_df, best=9)
+plot(prune.train_df)
+text(prune.train_df, pretty=0)
+```
+
+Compute the test error rate using the pruned tree 
+
+```{r}
+tree.pred <-predict(prune.train_df, test.train_df, type="class")
+table(tree.pred,Classifier.test)
+mean(tree.pred!=Classifier.test)
+```
+
+#### Random Forest
+
+Bagging: m=p
+
+```{r}
+bag.train_df <- randomForest(Classifier~. -SalePrice, data=train.train_df, mtry=79, importance=TRUE)
+bag.train_df
+```
+
+Predict
+
+```{r}
+bag.classifier <- predict(bag.train_df, newdata = test.train_df) 
+table(predict=bag.classifier, truth=Classifier.test)
+mean(bag.classifier!=Classifier.test)
+```
+
+Random Forest: m=p/3
+
+```{r}
+rf.train_df <- randomForest(Classifier~. -SalePrice, data=train.train_df, mtry=26, importance=TRUE)
+rf.train_df
+```
+
+Predict
+
+```{r, eval = FALSE}
+rf.classifier <- predict(rf.train_df, newdata = test.train_df) 
+table(predict=rf.classifier, truth=Classifier.test)
+mean(rf.classifier!=Classifier.test)
+```
+
+#### Support Vector Machine
+
+Basic SVM Model
+
+```{r, eval = FALSE}
+svmfit <-svm(Classifier~.-SalePrice, data=train.train_df, kernel="linear", cost=10, scale=FALSE)
+```
+
+Tuning SVM Model
+
+```{r, eval = FALSE}
+tune.out <-tune(svm, Classifier~. -SalePrice , data=train.train_df, kernel="linear", ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)))
+summary(tune.out)
+```
+
+We see that cost=0.01 results in the lowest cross validation error rate
+
+tune() function stores the best model obtained, which can be assessed as follows
+
+```{r, eval = FALSE}
+bestmod <-tune.out$best.model
+summary(bestmod)
+
+svm_pred <-predict(bestmod, test.train_df)
+table(predict=svm_pred, truth=Classifier.test)
+mean(svm_pred!=Classifier.test)
+```
+
+#### Boosting
+
+```{r, eval = FALSE}
+train.train_df$Classifier2 <- ifelse(train.train_df$Classifier=="High",1,0)
+boost.train=gbm(Classifier2~. -SalePrice -Classifier, data=train.train_df, distribution="bernoulli", n.trees = 5000, interaction.depth = 4)
+```
+
+Predicting
+
+```{r, eval = FALSE}
+boost.pred=predict(boost.train, newdata=test.train_df, n.trees=5000)
+boost.classifier=ifelse(boost.pred >0.5,1,0)
+Classifier2.test <- ifelse(Classifier.test=="High",1,0)
+table(predict=boost.classifier, truth=Classifier2.test)
+mean(boost.classifier!=Classifier2.test)
+```

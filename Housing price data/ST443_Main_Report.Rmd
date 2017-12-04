@@ -1,0 +1,29 @@
+---
+title: "LSE, ST443, Project, Part 1"
+author: "Group 9"
+date: "Michealmas Term 2017"
+output: pdf_document
+---
+
+
+
+## Data Cleaning and Transformation
+
+```{r, child = 'ST443_Data_Cleaning.Rmd'}
+```
+
+---
+---
+
+## Regression Code
+
+```{r, child = 'ST443_Regression.Rmd'}
+```
+
+---
+---
+
+## Classification Code
+
+```{r, child = 'ST443_Classification.Rmd'}
+```

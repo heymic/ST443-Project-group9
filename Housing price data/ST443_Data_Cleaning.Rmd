@@ -1,0 +1,248 @@
+---
+title: "LSE ST443, Machine Learning Project Part 1 - Data Cleaning and Transformatiomn"
+author: "GROUP 9"
+date: "Michealmas Term 2017"
+output: pdf_document
+---
+```{r, warning=FALSE, message=FALSE}
+library(dplyr)
+```
+
+```{r}
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+```
+
+```{r, include = FALSE}
+setwd("C:/Users/Michal/Documents/01- Master Degree/GitHub/ST443-Project-group9/Housing price data")
+getwd()
+```
+
+```{r}
+train_raw = read.csv("train.csv", row.names = "Id", stringsAsFactors=FALSE)
+testing_raw = read.csv("test.csv", row.names = "Id", stringsAsFactors=FALSE)
+```
+
+```{r}
+#combining train and test data for quicker data prep
+testing_raw$SalePrice <- NA
+train_raw$isTrain <- 1
+testing_raw$isTrain <- 0
+df <- rbind(train_raw,testing_raw)
+```
+
+#### Missing Values and imputation.
+
+```{r}
+colSums(sapply(df, is.na))
+```
+
+```{r, Pool}
+df[,c('PoolQC','PoolArea')] %>%
+  group_by(PoolQC) %>%
+  summarise(mean = mean(PoolArea), counts = n()) 
+```
+
+```{r PoolArea}
+df[(df$PoolArea > 0) & is.na(df$PoolQC),c('PoolQC','PoolArea')]
+```
+
+Imputing the missing values of pools, if no pool then assign 'None'
+
+```{r PoolQC}
+df[2421,'PoolQC'] = 'Ex'
+df[2504,'PoolQC'] = 'Ex'
+df[2600,'PoolQC'] = 'Fa'
+df$PoolQC[is.na(df$PoolQC)] = 'None'
+```
+
+```{r}
+garage.cols <- c('GarageArea', 'GarageCars', 'GarageQual', 'GarageFinish', 'GarageCond', 'GarageType')
+#df[is.na(df$GarageCond),garage.cols]
+```
+
+Imputing the missing values of Garages. If the no garage  then assigning 0 or None
+
+```{r GarageYrBlt}
+#length(which(df$GarageYrBlt == df$YearBuilt))
+df[(df$GarageArea > 0) & is.na(df$GarageYrBlt), c(garage.cols, 'GarageYrBlt')]
+df$GarageYrBlt[2127] <- df$YearBuilt[2127]
+df[2127, 'GarageQual'] <- Mode(df$GarageQual)
+df[2127, 'GarageFinish'] <- Mode(df$GarageFinish)
+df[2127, 'GarageCond'] <- Mode(df$GarageCond)
+df$GarageYrBlt[which(is.na(df$GarageYrBlt))] <- 0
+```
+
+to numeric - 0, to categorical = 'None'
+
+```{r}
+for(i in garage.cols){
+if (sapply(df[i], is.numeric) == TRUE){
+    df[,i][which(is.na(df[,i]))] <- 0
+  }
+  else{
+    df[,i][which(is.na(df[,i]))] <- "None"
+  }
+}
+```
+
+```{r KitchenQual}
+df$KitchenQual[which(is.na(df$KitchenQual))] <- Mode(df$KitchenQual)
+```
+
+```{r MSZoning MSSubClass}
+df[is.na(df$MSZoning),c('MSZoning','MSSubClass')]
+table(df$MSZoning, df$MSSubClass)
+```
+```{r}
+df$MSZoning[c(2217, 2905)] = 'RL'
+df$MSZoning[c(1916, 2251)] = 'RM'
+```
+
+There are 486 Nas in LotFrontage, setting the NAs to median.
+
+```{r LotFrontage}
+df$LotFrontage[which(is.na(df$LotFrontage))] <- median(df$LotFrontage,na.rm = T)
+```
+
+There are 2721 NAs in Alley, set them equal to 'None'
+
+```{r Alley}
+df$Alley[which(is.na(df$Alley))] <- "None"
+```
+
+One of the data is missing the rest set to 0 or 'None'
+
+```{r MasVnrArea MasVnrType}
+#df[(df$MasVnrArea > 0) & (is.na(df$MasVnrType)),c('MasVnrArea','MasVnrType')]
+df[2611, 'MasVnrType'] = 'BrkFace'
+df$MasVnrType[is.na(df$MasVnrType)] = 'None'
+df$MasVnrArea[is.na(df$MasVnrArea)] = 0
+```
+
+For small number of NAs we apply Mode to the categorical, and median to the continous
+
+```{r}
+for(i in colnames(df[,sapply(df, is.character)])){
+  if (sum(is.na(df[,i])) < 5){
+    df[,i][which(is.na(df[,i]))] <- Mode(df[,i])
+  }
+}
+
+for(i in colnames(df[,sapply(df, is.integer)])){
+  if (sum(is.na(df[,i])) < 5){
+    df[,i][which(is.na(df[,i]))] <- median(df[,i], na.rm = T)
+  }
+}
+```
+
+For large number of NAs we apply string "None" to the categorical as a seperate Level, and 0 to the continous
+
+```{r}
+for(i in colnames(df[,sapply(df, is.character)])){
+    df[,i][which(is.na(df[,i]))] <- "None"
+}
+```
+
+We have filled in all the missing values. 
+The remaining ones are the SalesPrice in the predicting Dataset that is fine!
+
+```{r}
+#colSums(sapply(df, is.na))
+sum(is.na(df)) == 1459
+```
+
+#### Creating categorical variables and checking whether and some problem appear. if f.e testing has more levels than the training data!
+
+```{r Splitting the data for testing the level factors}
+train_df <- df[df$isTrain==1,]
+test_df <- df[df$isTrain==0,]
+
+train_df$isTrain <- NULL
+test_df$isTrain <- NULL
+test_df$SalePrice <- NULL
+```
+
+```{r}
+train_df$MSSubClass <- as.factor(train_df$MSSubClass)
+test_df$MSSubClass <- as.factor(test_df$MSSubClass)
+
+train_df$OverallQual <- as.factor(train_df$OverallQual)
+test_df$OverallQual <- as.factor(test_df$OverallQual)
+
+train_df$OverallCond <- as.factor(train_df$OverallCond)
+test_df$OverallCond <- as.factor(test_df$OverallCond)
+```
+
+```{r}
+for(i in colnames(train_df[,sapply(train_df, is.character)])){
+    train_df[,i] <- as.factor(train_df[,i])
+}
+for(i in colnames(test_df[,sapply(test_df, is.character)])){
+    test_df[,i] <- as.factor(test_df[,i])
+}
+```
+
+```{r Check 1}
+#Check is some there are more levels in some of the categorical factors in the testing compared to the training
+for(i in colnames(train_df[,sapply(train_df, is.factor)])){
+  if (length(levels(train_df[,i])) < length(levels(test_df[,i]))) {
+    print(i)
+    print(levels(train_df[,i]))
+    print(levels(test_df[,i]))
+  }
+}
+```
+level '150' appears once in the testing data and no such level is in the training data. Remove this level.
+```{r Remove the appearing problem}
+#df[df$MSSubClass == 150,] 
+df[df$MSSubClass == 150,"MSSubClass"] <- 120
+```
+
+#### Transformations
+
+```{r}
+hist(df$SalePrice)
+```
+```{r}
+df$SalePrice <- log(df$SalePrice)
+```
+
+```{r}
+hist(df$SalePrice)
+```
+
+#### Create factors in the combined dataframe and split the data into testing and training.
+
+```{r}
+for(i in colnames(df[,sapply(df, is.character)])){
+    df[,i] <- as.factor(df[,i])
+}
+
+df$MSSubClass <- as.factor(df$MSSubClass)
+df$OverallQual <- as.factor(df$OverallQual)
+df$OverallCond <- as.factor(df$OverallCond)
+
+### THINGS TO CONSIDER:
+#df$GarageYrBlt <- as.factor(df$GarageYrBlt) # treat as factor as some of them are '0'
+#add years as dummies - POSSIBILITY - but a problem appears, the algorithms cannot treat categorical varibles with more than 55levels
+#df$YearBuilt <- as.factor(df$YearBuilt)
+#df$YearRemodAdd <- as.factor(df$YearRemodAdd)
+#df$YrSold <- as.factor(df$YrSold)
+```
+
+```{r Splitting the data }
+train_df <- df[df$isTrain==1,]
+test_df <- df[df$isTrain==0,]
+
+train_df$isTrain <- NULL
+test_df$isTrain <- NULL
+test_df$SalePrice <- NULL
+```
+
+```{r}
+str(df)
+```
