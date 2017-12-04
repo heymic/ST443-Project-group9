@@ -3,112 +3,104 @@ title: "Classifer"
 output: pdf_document
 ---
 
-#Classification
+#Classification Approaches--------------------------------------------------------------------------------------------------------
 
-```{r}
+```{r, eval = FALSE}
 mean(train_df$SalePrice)
 ```
 
-```{r}
+Coverting SalePrice into a binary variable
+
+```{r, eval = FALSE}
 train_df$Classifier <- ifelse(train_df$SalePrice <= 12.024,"Low","High")
 train_df$Classifier <- as.factor(train_df$Classifier)
 train_df$Classifier <- factor(train_df$Classifier, levels = c("Low", "High"))
-train_df$isTrain <- NULL
 ```
 
 Splitting of data into training and test set
 
-```{r}
+```{r, warning=FALSE, message=FALSE, eval = FALSE}
 attach(train_df)
+set.seed(1)
 training<- sample(1:nrow(train_df), 1460*0.5)
 test.train_df <- train_df[-training,]
 train.train_df <- train_df[training,]
 Classifier.test <- test.train_df$Classifier
 ```
 
-#Ridge
+####Ridge----------------------------------------------------------------------------------------------------
 
-```{r}
-library(glmnet)
-x <- model.matrix(Classifier~.-SalePrice, data=train.train_df)
-y <- train.train_df$Classifier
-x.test <- model.matrix(Classifier~.-SalePrice, data=test.train_df)
+```{r, eval = FALSE}
+x.train.classifier <- model.matrix(Classifier~.-SalePrice, data=train.train_df)
+y.train.classifier <- train.train_df$Classifier
+x.test.classifier <- model.matrix(Classifier~.-SalePrice, data=test.train_df)
 ```
 
-
-```{r}
-fit.ridge <- glmnet(x,y,alpha=0, family="binomial")
+```{r, eval = FALSE}
+fit.ridge <- glmnet(x.train.classifier,y.train.classifier,alpha=0, family="binomial")
 plot(fit.ridge, xvar='lambda', lanel=TRUE)
 plot(fit.ridge, xvar='dev', lanel=TRUE)
-cv.ridge <- cv.glmnet(x,y,alpha=0,family="binomial")
+cv.ridge <- cv.glmnet(x.train.classifier,y.train.classifier,alpha=0,family="binomial")
 plot(cv.ridge)
 ```
 
 Ridge-Minimum Lambda
 
-```{r}
+```{r, eval = FALSE}
 ridge.min.lambda=cv.ridge$lambda.min
-fit.ridge.min <- glmnet(x,y,alpha=0, family="binomial", lambda=ridge.min.lambda)
-prediction_ridge_min_log <- predict(fit.ridge.min, x.test)
-prediction_ridge_min_log_classifier <- (ifelse(prediction_ridge_min_log >0.5,1,0))
-table(prediction_ridge_min_log_classifier, Classifier.test)
-#mean(prediction_ridge_min_log_classifier!=Classifier.test)
+fit.ridge.min <- glmnet(x.train.classifier,y.train.classifier,alpha=0, family="binomial", lambda=ridge.min.lambda)
+prediction.ridge.min.log <- predict(fit.ridge.min, x.test.classifier)
+prediction.ridge.min.log.classifier <- (ifelse(prediction.ridge.min.log >0.5,1,0))
+table(prediction.ridge.min.log.classifier, Classifier.test)
 ```
 
 Ridge-1se
 
-```{r}
+```{r, eval = FALSE}
 ridge.1se.lambda=cv.ridge$lambda.1se
-fit.ridge.1se <- glmnet(x,y,alpha=0, family="binomial", lambda=ridge.1se.lambda)
-prediction_ridge_1se_log <- predict(fit.ridge.1se, x.test)
-prediction_ridge_1se_log_classifier <- ifelse(prediction_ridge_1se_log >0.5,1,0)
-table(prediction_ridge_1se_log_classifier, Classifier.test)
-#mean(prediction_ridge_1se_log_classifier!=Classifier.test)
+fit.ridge.1se <- glmnet(x.train.classifier,y.train.classifier,alpha=0, family="binomial", lambda=ridge.1se.lambda)
+prediction.ridge.1se.log <- predict(fit.ridge.1se, x.test.classifier)
+prediction.ridge.1se.log.classifier <- ifelse(prediction.ridge.1se.log >0.5,1,0)
+table(prediction.ridge.1se.log.classifier, Classifier.test)
 ```
 
-#Lasso
+####Lasso------------------------------------------------------------------------------------
 
-```{r}
-fit.lasso <- glmnet(x,y, family="binomial")
+```{r, eval = FALSE, warning=FALSE, message=FALSE}
+fit.lasso <- glmnet(x.train.classifier,y.train.classifier, family="binomial")
 plot(fit.lasso, xvar='lambda', lanel=TRUE)
 plot(fit.lasso, xvar='dev', lanel=TRUE)
-cv.lasso <- cv.glmnet(x,y ,family="binomial")
+cv.lasso <- cv.glmnet(x.train.classifier,y.train.classifier ,family="binomial")
 plot(cv.lasso)
 ```
 
 Lasso-Minimum Lambda
 
-```{r}
+```{r, eval = FALSE}
 lasso.min.lambda=cv.lasso$lambda.min
-fit.lasso.min <- glmnet(x,y, family="binomial", lambda=lasso.min.lambda)
-prediction_lasso_min_log <- predict(fit.lasso.min, x.test)
-prediction_lasso_min_log_classifier <- (ifelse(prediction_lasso_min_log >0.5,1,0))
-table(prediction_lasso_min_log_classifier, Classifier.test)
-#mean(prediction_lasso_min_log_classifier!=Classifier.test)
+fit.lasso.min <- glmnet(x.train.classifier,y.train.classifier, family="binomial", lambda=lasso.min.lambda)
+prediction.lasso.min.log <- predict(fit.lasso.min, x.test.classifier)
+prediction.lasso.min.log.classifier <- (ifelse(prediction.lasso.min.log >0.5,1,0))
+table(prediction.lasso.min.log.classifier, Classifier.test)
 ```
 
 Lasso-1se
 
-```{r}
+```{r, eval = FALSE}
 lasso.1se.lambda=cv.lasso$lambda.1se
-fit.lasso.1se <- glmnet(x,y,alpha=0, family="binomial", lambda=lasso.1se.lambda)
-prediction_lasso_1se_log <- predict(fit.lasso.1se, x.test)
-prediction_lasso_1se_log_classifier <- ifelse(prediction_lasso_1se_log >0.5,1,0)
-table(prediction_lasso_1se_log_classifier, Classifier.test)
-#mean(prediction_lasso_1se_log_classifier!=Classifier.test)
+fit.lasso.1se <- glmnet(x.train.classifier,y.train.classifier,alpha=0, family="binomial", lambda=lasso.1se.lambda)
+prediction.lasso.1se.log <- predict(fit.lasso.1se, x.test.classifier)
+prediction.lasso.1se.log.classifier <- ifelse(prediction.lasso.1se.log >0.5,1,0)
+table(prediction.lasso.1se.log.classifier, Classifier.test)
 ```
 
-#Classification Tree
+####Classification Tree----------------------------------------------------------------------------------
 
-```{r}
-library(tree)
+```{r, eval = FALSE}
+tree.train_df <- tree(Classifier~.-SalePrice, train.train_df)
 ```
 
-```{r}
-tree.train_df <- tree(Classifier~.-SalePrice, train_df, subset=training)
-```
-
-```{r}
+```{r, eval = FALSE}
 tree.pred <- predict(tree.train_df, test.train_df, type="class")
 length(tree.pred)
 length(Classifier.test)
@@ -116,20 +108,18 @@ table(tree.pred, Classifier.test)
 mean(tree.pred!=Classifier.test)
 ```
 
+Prune the tree
 
-```{r}
+```{r, eval = FALSE}
 cv.train_df <- cv.tree(tree.train_df, FUN= prune.misclass)
-names(cv.train_df)
-cv.train_df
-
 par(mfrow=c(1,2))
 plot(cv.train_df$size, cv.train_df$dev, type="b")
 plot(cv.train_df$k, cv.train_df$dev, type="b")
 ```
 
-The optimal number of terminal node is 9 and we display the pruned tree graphically
+The optimal number of terminal node is 9
 
-```{r}
+```{r, eval = FALSE}
 par(mfrow=c(1,1))
 prune.train_df <-prune.misclass(tree.train_df, best=9)
 plot(prune.train_df)
@@ -144,42 +134,48 @@ table(tree.pred,Classifier.test)
 mean(tree.pred!=Classifier.test)
 ```
 
-#Bagging
+####Random Forest----------------------------------------------------
 
-```{r}
-library(randomForest)
-```
+Bagging: m=p
 
-```{r}
+```{r, eval = FALSE}
 bag.train_df <- randomForest(Classifier~. -SalePrice, data=train.train_df, mtry=79, importance=TRUE)
 bag.train_df
 ```
 
 Predict
 
-```{r}
-bag_classifier <- predict(bag.train_df, newdata = test.train_df) 
-table(predict=bag_classifier, truth=Classifier.test)
-mean(bag_classifier!=Classifier.test)
+```{r, eval = FALSE}
+bag.classifier <- predict(bag.train_df, newdata = test.train_df) 
+table(predict=bag.classifier, truth=Classifier.test)
+mean(bag.classifier!=Classifier.test)
 ```
 
-#SVM
+Random Forest: m=p/3
 
-```{r}
-library(e1071)
+```{r, eval = FALSE}
+rf.train_df <- randomForest(Classifier~. -SalePrice, data=train.train_df, mtry=26, importance=TRUE)
+rf.train_df
 ```
+
+Predict
+
+```{r, eval = FALSE}
+rf.classifier <- predict(rf.train_df, newdata = test.train_df) 
+table(predict=rf.classifier, truth=Classifier.test)
+mean(rf.classifier!=Classifier.test)
+```
+####SVM---------------------------------------------------
 
 Basic SVM Model
 
-```{r}
+```{r, eval = FALSE}
 svmfit <-svm(Classifier~.-SalePrice, data=train.train_df, kernel="linear", cost=10, scale=FALSE)
-print(svmfit)
-svmfit$index
 ```
 
 Tuning SVM Model
 
-```{r}
+```{r, eval = FALSE}
 tune.out <-tune(svm, Classifier~. -SalePrice , data=train.train_df, kernel="linear", ranges=list(cost=c(0.001, 0.01, 0.1, 1, 5, 10, 100)))
 summary(tune.out)
 ```
@@ -188,7 +184,7 @@ We see that cost=0.01 results in the lowest cross validation error rate
 
 tune() function stores the best model obtained, which can be assessed as follows
 
-```{r}
+```{r, eval = FALSE}
 bestmod <-tune.out$best.model
 summary(bestmod)
 
@@ -197,24 +193,19 @@ table(predict=svm_pred, truth=Classifier.test)
 mean(svm_pred!=Classifier.test)
 ```
 
-#Boosting
+####Boosting--------------------------------------------
 
-```{r}
-library(gbm)
-```
-
-```{r}
+```{r, eval = FALSE}
 train.train_df$Classifier2 <- ifelse(train.train_df$Classifier=="High",1,0)
 boost.train=gbm(Classifier2~. -SalePrice -Classifier, data=train.train_df, distribution="bernoulli", n.trees = 5000, interaction.depth = 4)
-summary(boost.train)
 ```
 
 Predicting
 
-```{r}
-boost_pred=predict(boost.train, newdata=test.train_df, n.trees=5000)
-boost_classifier=ifelse(boost_pred >0.5,1,0)
+```{r, eval = FALSE}
+boost.pred=predict(boost.train, newdata=test.train_df, n.trees=5000)
+boost.classifier=ifelse(boost.pred >0.5,1,0)
 Classifier2.test <- ifelse(Classifier.test=="High",1,0)
-table(predict=boost_classifier, truth=Classifier2.test)
-mean(boost_classifier!=Classifier2.test)
+table(predict=boost.classifier, truth=Classifier2.test)
+mean(boost.classifier!=Classifier2.test)
 ```
