@@ -196,7 +196,9 @@ for(i in colnames(train_df[,sapply(train_df, is.factor)])){
   }
 }
 ```
+
 level '150' appears once in the testing data and no such level is in the training data. Remove this level.
+
 ```{r Remove the appearing problem}
 #df[df$MSSubClass == 150,] 
 df[df$MSSubClass == 150,"MSSubClass"] <- 120

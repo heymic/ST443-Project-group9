@@ -5,13 +5,12 @@ date: "Michealmas Term 2017"
 output: pdf_document
 ---
 ```{r, warning=FALSE, message=FALSE}
-library(boot)
-library(leaps)
 library(tree) # Normal Tree
 library(glmnet) # Lasso/Ridge
 library(randomForest) # random Forest
 library(xgboost) # boosting trees
 library(caret) # for tuning xgboost
+library(gbm) # for the gradient boosting model
 ```
 
 Generating matrix from the data frames, no intercept
@@ -24,7 +23,7 @@ X_test <- model.matrix(~.-1, data=test_df)
 
 ### Linear Regression
 
-regression with all the parameters - just as a benchmark
+Regression with all the parameters - just as a benchmark
 
 ```{r, eval = FALSE}
 lm_fit_all = lm(SalePrice ~., data = train_df) 
@@ -45,13 +44,13 @@ write.table(prediction_LR_ALL, file="prediction_LR_ALL.csv",col.names = c("Id","
 ```
 
 
-### LASSO 
+### Lasso
 
 ```{r}
 cv.lasso <-cv.glmnet(X_train, y_train, nfolds = 10, alpha = 1)
 plot(cv.lasso)
-#here is an example why should we apply the one standard deviation error rule!
 ```
+
 ```{r,  eval = FALSE}
 penalty_min <- cv.lasso$lambda.min #optimal lambda
 penalty_1se <- cv.lasso$lambda.1se # 1 Standard Error Apart
@@ -77,7 +76,7 @@ write.table(prediction_LASSO_min, file="prediction_LASSO_min.csv",col.names = c(
 write.table(prediction_LASSO_1se, file="prediction_LASSO_1se.csv",col.names = c("Id", "SalePrice"), sep =',', row.names = FALSE)
 ```
 
-### REGRESSION TREE
+### Regression Tree
 
 ```{r}
 tree.SalePrice <-tree(SalePrice~., data = train_df)
@@ -90,7 +89,6 @@ text(tree.SalePrice, pretty=1)
 cv.SalePrice <-cv.tree(tree.SalePrice, K = 10)
 plot(cv.SalePrice$size, cv.SalePrice$dev, type="b")
 ## In this case, the most complex tree is selected by cross-validation
-## However, if we wish to prune the tree, we could do so as follows using prune.tree() function
 prune.SalePrice <-prune.tree(tree.SalePrice, best=10)
 plot(prune.SalePrice)
 text(prune.SalePrice, pretty=1)
@@ -113,10 +111,7 @@ write.table(prediction_TREE, file="prediction_TREE.csv",col.names = c("Id", "Sal
 ### Bagging
 
 ```{r,  eval = FALSE}
-##Bagging
-library(randomForest)
 set.seed(1)
-## Recall that bagging is simply a special case of a random forest with m=p, here we use mtry=13, i.e. bagging would be done
 bag.SalePrice <-randomForest(SalePrice~., data=train_df, mtry= 79, importance=TRUE)
 bag.SalePrice
 ```
@@ -134,10 +129,9 @@ prediction_bag <- cbind(Id = rownames(X_test), SalesPrice = prediction_bag)
 write.table(prediction_bag, file="prediction_bag.csv",col.names = c("Id", "SalePrice"), sep =',', row.names = FALSE)
 ```
 
-### Random Forest $m = p/3$
+### Random Forest $m = \frac{p}{3}$
 
 ```{r, eval = FALSE}
-## We could change the number of trees grown by randomForest() using ntree argument
 RF_p3.SalePrice <-randomForest(SalePrice~., data=train_df, mtry = 26, importance=TRUE)
 ```
 
@@ -154,7 +148,7 @@ prediction_RF_p3 <- cbind(Id = rownames(X_test), SalesPrice = prediction_RF_p3)
 write.table(prediction_RF_p3, file="prediction_RF_p3.csv",col.names = c("Id", "SalePrice"), sep =',', row.names = FALSE)
 ```
 
-### Random Forest m = $sqrt(p)$
+### Random Forest $m = \sqrt(p)$
 
 ```{r,  eval = FALSE}
 ## We could change the number of trees grown by randomForest() using ntree argument
@@ -208,10 +202,6 @@ write.table(prediction_RF_tuned, file="prediction_RF_tuned.csv",col.names = c("I
 
 ### Gradient Boosting Model - library (gbm)
 
-```{r, warning= FALSE, message = FALSE}
-library(gbm)
-```
-
 ```{r}
 set.seed(1)
 boost.train = gbm(SalePrice ~. , data=train_df,
@@ -248,14 +238,13 @@ write.table(prediction_BOOST, file="prediction_BOOST.csv",col.names = c("Id", "S
 
 ```{r,  eval = FALSE}
 #setup
-library(parallel)
+library(parallel) #checking the number of cores
 detectCores() #=> 8
 dtrain <- xgb.DMatrix(X_train, label = y_train)
 ```
 
 Cross Validation in XGBoost - CV  
-Source:  
-[link](https://stackoverflow.com/questions/35050846/xgboost-in-r-how-does-xgb-cv-pass-the-optimal-parameters-into-xgb-train)
+Source: [StackOverflow](https://stackoverflow.com/questions/35050846/xgboost-in-r-how-does-xgb-cv-pass-the-optimal-parameters-into-xgb-train)
 ```{r, eval = FALSE}
 best_param2 = list()
 best_rmse = Inf
